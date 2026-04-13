@@ -133,6 +133,7 @@ function fetchCatalogo() {
           var v = hd.map(function(k) { return (row[k] || "").toString().trim(); });
           return { bpoLineId: v[0] || "", shipTo: v[1] || "", itemId: v[2] || "", descripcion: v[3] || "", pesoUnit: v[4] || "" };
         }).filter(function(x) { return x.itemId; });
+        catalogo.sort(function(a, b) { return a.itemId.localeCompare(b.itemId); });
         var t = new Date().toLocaleTimeString();
         document.getElementById("syncStatus").innerHTML = '<span style="color:#1a6b3c">● Sheet — ' + catalogo.length + ' productos (' + t + ')</span>';
       } else {
