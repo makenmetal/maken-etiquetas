@@ -60,7 +60,7 @@ h2{font-size:18px;margin-bottom:2px}
 @media print{
   body{background:#fff;padding:0;max-width:none;margin:0}
   .no-print{display:none!important}
-  .print-grid{display:grid;grid-template-columns:4in 4in;grid-template-rows:5in 5in;justify-content:center;align-content:center;gap:0;width:8.5in;height:11in;margin:0 auto;padding:0.25in 0.25in}
+  #printGrid{display:grid!important;grid-template-columns:4in 4in;grid-template-rows:5in 5in;justify-content:center;align-content:center;gap:0;width:8.5in;height:11in;margin:0 auto;padding:0.25in 0.25in}
   .lbl{border:1.5px solid #000;margin:0}
 }
 </style>
@@ -231,24 +231,30 @@ function makeLabel(ln){
       '</div>'+
     '</div>'+
 
-    /* BIG ROW: No. Parte + OC + Cantidad */
+    /* BIG ROW: No. Parte + Cantidad */
     '<div class="lbl-big-row">'+
       '<div class="lbl-big-cell" style="flex:1.5">'+
         '<div class="lbl-big-label">No. de Parte</div>'+
-        '<div class="lbl-big-val" style="font-size:26px">'+( ln.itemId||"—")+'</div>'+
-        '<div style="font-size:11px;margin-top:2px;color:#333">'+( ln.descripcion||"")+'</div>'+
+        '<div class="lbl-big-val" style="font-size:26px">'+(ln.itemId||"—")+'</div>'+
+        '<div style="font-size:11px;margin-top:2px;color:#333">'+(ln.descripcion||"")+'</div>'+
       '</div>'+
-      '<div class="lbl-big-cell">'+
+      '<div class="lbl-big-cell" style="border-right:none">'+
         '<div class="lbl-big-label">Cantidad</div>'+
         '<div class="lbl-big-val" style="font-size:34px">'+(ln.cantidad||"—")+'</div>'+
         '<div style="font-size:10px;color:#555">piezas</div>'+
       '</div>'+
     '</div>'+
 
-    /* Orden de Compra grande */
-    '<div style="border-bottom:2px solid #000;padding:6px 10px">'+
-      '<div style="font-size:9px;color:#555;text-transform:uppercase;letter-spacing:0.5px">Orden de Compra (BPO)</div>'+
-      '<div style="font-size:22px;font-weight:900">'+(ln.bpoLineId||"—")+'</div>'+
+    /* OC + Ship To */
+    '<div class="lbl-detail-row">'+
+      '<div class="lbl-detail-cell" style="flex:2">'+
+        '<div style="font-size:9px;color:#555;text-transform:uppercase;letter-spacing:0.5px">Orden de Compra (BPO)</div>'+
+        '<div style="font-size:22px;font-weight:900">'+(ln.bpoLineId||"—")+'</div>'+
+      '</div>'+
+      '<div class="lbl-detail-cell" style="border-right:none">'+
+        '<div class="lbl-detail-label">Ship To</div>'+
+        '<div style="font-size:14px;font-weight:800">'+(ln.shipTo||"—")+'</div>'+
+      '</div>'+
     '</div>'+
 
     /* Detail row: OT + Peso Neto + Fecha */
@@ -268,16 +274,13 @@ function makeLabel(ln){
       '</div>'+
     '</div>'+
 
-    /* Footer: QR + Sello */
+    /* Footer: QR + Sello calidad grande */
     '<div class="lbl-footer">'+
-      '<div class="lbl-footer-left">'+
-        '<div style="font-size:9px;color:#555">Ship To: <b>'+( ln.shipTo||"—")+'</b></div>'+
-      '</div>'+
       '<div class="lbl-footer-center">'+
         '<img src="'+qrUrl+'" width="75" height="75" alt="QR">'+
       '</div>'+
-      '<div class="lbl-footer-right">'+
-        '<div style="font-size:8px;color:#ccc;text-align:center;font-weight:700;letter-spacing:0.5px">ACEPTADO<br>CALIDAD</div>'+
+      '<div class="lbl-footer-right" style="flex:1">'+
+        '<div style="font-size:10px;color:#ccc;text-align:center;font-weight:700;letter-spacing:0.5px">ACEPTADO<br>CALIDAD</div>'+
       '</div>'+
     '</div>'+
   '</div>';
@@ -295,10 +298,13 @@ function renderPreview(){
   for(var i=0;i<filled.length;i++) h+=makeLabel(filled[i]);
   h+='</div></div>';
   /* Print: 4 per page grid */
-  h+='<div class="print-grid" style="display:none">';
+  h+='<div id="printGrid" class="print-grid">';
   for(var j=0;j<filled.length;j++) h+=makeLabel(filled[j]);
   h+='</div>';
   area.innerHTML=h;
+  /* Show print grid only exists for @media print */
+  var pg=document.getElementById("printGrid");
+  if(pg) pg.style.display="none";
 }
 
 document.addEventListener("click",function(e){if(!e.target.closest(".ac-wrap"))closeDropdowns();});
