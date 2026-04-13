@@ -110,8 +110,7 @@ var lines = [];
 var showPrev = false;
 var lineId = 0;
 
-function mkLine(){lineId++;return{id:lineId,bpoLineId:"",shipTo:"",itemId:"",descripcion:"",ordenTrabajo:"",cantidad:"",pesoUnit:""};}
-function calcPN(pu,c){var a=parseFloat(pu),b=parseFloat(c);return(isNaN(a)||isNaN(b)||b===0)?"":(a*b).toFixed(2);}
+function mkLine(){lineId++;return{id:lineId,bpoLineId:"",shipTo:"",itemId:"",descripcion:"",ordenTrabajo:"",cantidad:"",pesoUnit:"",copias:"1"};}function calcPN(pu,c){var a=parseFloat(pu),b=parseFloat(c);return(isNaN(a)||isNaN(b)||b===0)?"":(a*b).toFixed(2);}
 
 document.getElementById("fecha").value=new Date().toISOString().split("T")[0];
 lines.push(mkLine());
@@ -197,6 +196,7 @@ function renderLines(){
     h+='<div class="grid2"><div><span class="field-label">Cantidad (pzas)</span><input class="inp" type="number" value="'+ln.cantidad+'" oninput="updateField('+i+',\'cantidad\',this.value)"></div>';
     h+='<div><span class="field-label">Peso Unit. (kg)</span><input class="inp" style="background:#f0f0f0" value="'+ln.pesoUnit+'" oninput="updateField('+i+',\'pesoUnit\',this.value)"></div></div>';
     h+='<div class="peso-badge" id="pn-'+ln.id+'" style="display:'+(pn?"block":"none")+'">Peso Neto: <span class="val">'+(pn||"")+' kg</span></div>';
+    h+='<div class="mb8" style="margin-top:8px"><span class="field-label">Copias de esta etiqueta</span><input class="inp" type="number" min="1" value="'+(ln.copias||"1")+'" oninput="updateField('+i+',\'copias\',this.value)" style="max-width:80px"></div>';
     h+='</div>';
   }
   c.innerHTML=h;
@@ -275,16 +275,14 @@ function makeLabel(ln){
       '</div>'+
     '</div>'+
 
-    /* Footer: LOGO | QR | SELLO CALIDAD */
+    /* Footer: Sello Calidad | QR + Logo */
     '<div class="lbl-footer">'+
-      '<div style="flex:1;display:flex;align-items:center;justify-content:center;border-right:1.5px solid #000;padding:6px">'+
-        '<div style="background:#000;color:#fff;font-weight:900;font-size:28px;padding:10px 16px;letter-spacing:4px;border-radius:4px;line-height:1">MKM</div>'+
-      '</div>'+
-      '<div style="display:flex;align-items:center;justify-content:center;padding:6px;border-right:1.5px solid #000">'+
-        '<img src="'+qrUrl+'" width="75" height="75" alt="QR">'+
-      '</div>'+
-      '<div style="flex:1;display:flex;align-items:center;justify-content:center">'+
+      '<div style="flex:1;display:flex;align-items:center;justify-content:center;border-right:1.5px solid #000">'+
         '<div style="font-size:11px;color:#ccc;text-align:center;font-weight:700;letter-spacing:0.5px">ACEPTADO<br>CALIDAD</div>'+
+      '</div>'+
+      '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 10px;gap:4px">'+
+        '<img src="'+qrUrl+'" width="65" height="65" alt="QR">'+
+        '<div style="background:#000;color:#fff;font-weight:900;font-size:12px;padding:3px 10px;letter-spacing:3px;border-radius:2px;line-height:1">MKM</div>'+
       '</div>'+
     '</div>'+
   '</div>';
@@ -297,13 +295,22 @@ function renderPreview(){
   btn.style.display=(showPrev&&filled.length>0)?"block":"none";
   if(!showPrev)return;
   if(!filled.length){area.innerHTML='<p style="color:#888;font-size:13px;text-align:center;padding:20px">Captura Item ID y cantidad.</p>';return;}
+  /* Build labels with copies */
+  var allLabels = [];
+  for(var i=0;i<filled.length;i++){
+    var copies = parseInt(filled[i].copias) || 1;
+    if(copies < 1) copies = 1;
+    if(copies > 50) copies = 50;
+    for(var c=0;c<copies;c++) allLabels.push(makeLabel(filled[i]));
+  }
+  var totalCount = allLabels.join("");
   /* Preview: show individual labels */
   var h='<div class="no-print" style="overflow-x:auto"><div style="display:flex;flex-direction:column;gap:8px;align-items:center;min-width:300px">';
-  for(var i=0;i<filled.length;i++) h+=makeLabel(filled[i]);
+  h+=totalCount;
   h+='</div></div>';
   /* Print: 4 per page grid */
   h+='<div id="printGrid" class="print-grid">';
-  for(var j=0;j<filled.length;j++) h+=makeLabel(filled[j]);
+  h+=totalCount;
   h+='</div>';
   area.innerHTML=h;
   /* Show print grid only exists for @media print */
