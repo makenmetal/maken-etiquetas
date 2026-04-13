@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Etiquetas MKM - MAKEN METAL</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+:root { --bg: #f7f7f7; --card: #fff; --border: #ddd; --text: #1a1a1a; --muted: #888; --green: #1a6b3c; --greenbg: #e8f5e9; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text); padding: 12px 10px; max-width: 600px; margin: 0 auto; }
+h2 { font-size: 18px; margin-bottom: 2px; }
+.sub { color: var(--muted); font-size: 12px; margin-bottom: 12px; }
+.toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+.btn { padding: 8px 14px; border: 1px solid #aaa; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; background: #f0f0f0; }
+.btn:active { opacity: 0.7; }
+.btn-sync { background: var(--greenbg); }
+.btn-dark { background: #222; color: #fff; border: none; }
+.btn-green { background: var(--green); color: #fff; border: none; width: 100%; padding: 12px; font-size: 15px; font-weight: 700; border-radius: 8px; margin-bottom: 16px; }
+.status { font-size: 12px; font-weight: 600; }
+.field-label { font-size: 11px; font-weight: 600; color: var(--muted); margin-bottom: 2px; display: block; }
+.inp { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; }
+.card { border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 10px; background: var(--card); }
+.card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.card-head span { font-weight: 700; font-size: 14px; color: #333; }
+.card-head button { background: none; border: none; color: #c00; cursor: pointer; font-size: 18px; font-weight: 700; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+.mb8 { margin-bottom: 8px; }
+.peso-badge { background: var(--greenbg); border-radius: 6px; padding: 8px 12px; text-align: center; }
+.peso-badge .val { font-size: 18px; font-weight: 900; color: var(--green); }
+.ac-wrap { position: relative; }
+.ac-drop { position: absolute; top: 100%; left: 0; right: 0; z-index: 99; background: #fff; border: 1px solid #ccc; border-radius: 6px; max-height: 250px; overflow-y: auto; box-shadow: 0 4px 16px rgba(0,0,0,.2); }
+.ac-item { padding: 10px 12px; cursor: pointer; font-size: 13px; border-bottom: 1px solid #eee; }
+.ac-item:active, .ac-item:hover { background: #f0f0f0; }
+.ac-item .detail { color: #888; font-size: 11px; }
+.actions { display: flex; gap: 8px; margin-bottom: 16px; }
+.actions button { flex: 1; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.preview-scroll { overflow-x: auto; padding-bottom: 10px; }
+.preview-col { display: flex; flex-direction: column; gap: 6px; align-items: center; min-width: 390px; }
+
+/* === LABEL 46x103mm === */
+.lbl { border: 2px solid #000; width: 103mm; height: 46mm; font-family: Arial, sans-serif; display: flex; background: #fff; color: #000; overflow: hidden; page-break-inside: avoid; margin-bottom: 2mm; }
+.lbl-logo { width: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border-right: 1px solid #000; }
+.lbl-logo span { writing-mode: vertical-rl; transform: rotate(180deg); font-weight: 900; font-size: 9px; letter-spacing: 2px; }
+.lbl-main { flex: 1; display: flex; flex-direction: column; }
+.lbl-addr { display: flex; border-bottom: 1px solid #000; }
+.lbl-addr > div { flex: 1; padding: 2px 3px; line-height: 1.2; }
+.lbl-addr > div:first-child { border-right: 1px solid #000; }
+.lbl-body { display: flex; flex: 1; }
+.lbl-info { flex: 1; display: flex; flex-direction: column; border-right: 1px solid #000; }
+.lbl-part { padding: 3px 4px; border-bottom: 1px solid #000; }
+.lbl-orders { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #000; }
+.lbl-orders > div:first-child { border-right: 1px solid #000; }
+.lbl-orders > div { padding: 2px 4px; }
+.lbl-qty { display: flex; flex: 1; align-items: center; }
+.lbl-qty > div { flex: 1; padding: 2px 4px; text-align: center; }
+.lbl-qty > div:first-child { border-right: 1px solid #000; }
+.lbl-right { width: 80px; display: flex; flex-direction: column; }
+.lbl-qr { flex: 1; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #000; padding: 2px; }
+.lbl-fecha { padding: 2px 3px; border-bottom: 1px solid #000; text-align: center; }
+.lbl-sello { flex: 0.8; display: flex; align-items: center; justify-content: center; }
+
+@media print {
+  body { background: #fff; padding: 1mm; max-width: none; }
+  .no-print { display: none !important; }
+  .preview-scroll { overflow: visible; }
+  .preview-col { min-width: 0; }
+}
+</style>
+</head>
+<body>
+
+<div class="no-print">
+  <h2>Etiquetas de Empaque</h2>
+  <p class="sub">MAKEN METAL S.A. DE C.V. — 46 x 103 mm</p>
+
+  <div class="toolbar">
+    <button class="btn btn-sync" id="btnSync" onclick="fetchCatalogo()">⟳ Sync</button>
+    <span class="status" id="syncStatus" style="color:#666">● Cargando...</span>
+  </div>
+
+  <div class="mb8">
+    <span class="field-label">Fecha</span>
+    <input type="date" id="fecha" class="inp" style="max-width:180px" onchange="renderPreview()">
+  </div>
+
+  <div id="linesContainer"></div>
+
+  <div class="actions">
+    <button class="btn" style="background:#f5f5f5;border:1px solid #ccc" onclick="addLine()">+ Agregar</button>
+    <button class="btn btn-dark" id="btnPreview" onclick="togglePreview()">Vista previa</button>
+  </div>
+
+  <button class="btn-green" id="btnPrint" style="display:none" onclick="window.print()">Imprimir etiquetas</button>
+</div>
+
+<div id="previewArea" style="display:none"></div>
+
+<script>
+var SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ1JtoJW5D7HZ3pXd4VTGb7Ii5LLWd7LTYMjpl5hP_RYOEN2U5O41gnqSrCGeRKqA/pub?output=csv";
+
+var SHIP_TO = {
+  CATO: { real: "CATERPILLAR TORREÓN, S. DE RL DE C.V.", dir: "Carr. Torreón Mieleras Km 6.5, P.I. Ferropuerto Laguna, Torreón, Coah. CP 27400", noProv: "B9390X0" },
+  CMSA: { real: "CATERPILLAR MÉXICO S.A. DE C.V.", dir: "Carr. a Villa García Km 4.5, CP 66350, Sta. Catarina, N.L.", noProv: "B9390X0" },
+  NAOSF: { real: "CATERPILLAR INDUSTRIAS MÉXICO S DE RL DE CV", dir: "Carr. Fed. a Villa de García Km 4.5 S/N, CP 66350, Sta. Catarina, N.L.", noProv: "B9390X0" },
+  MONTERRE: { real: "CATERPILLAR INDUSTRIAS MÉXICO S DE RL DE CV", dir: "Carr. Fed. a Villa de García Km 4.5 S/N, CP 66350, Sta. Catarina, N.L.", noProv: "B9390X0" },
+  "Collado Mat": { real: "GRUPO COLLADO, S.A. DE C.V.", dir: "Prol. Av. Uniones, P.I. del Nte., CP 87316, H. Matamoros, Tamps.", noProv: "" },
+  "Collado Mty": { real: "GRUPO COLLADO, S.A. DE C.V.", dir: "Otomí No. 200, Col. Ex Hda. Sto. Domingo, CP 66490, San Nicolás de los Garza, N.L.", noProv: "" }
+};
+
+var catalogo = [];
+var lines = [];
+var showPrev = false;
+var lineId = 0;
+
+function mkLine() { lineId++; return { id: lineId, bpoLineId: "", shipTo: "", itemId: "", descripcion: "", ordenTrabajo: "", cantidad: "", pesoUnit: "" }; }
+function calcPN(pu, c) { var a = parseFloat(pu), b = parseFloat(c); return (isNaN(a) || isNaN(b) || b === 0) ? "" : (a * b).toFixed(3); }
+
+// Init
+document.getElementById("fecha").value = new Date().toISOString().split("T")[0];
+lines.push(mkLine());
+
+function fetchCatalogo() {
+  document.getElementById("syncStatus").innerHTML = '<span style="color:#666">● Cargando...</span>';
+  document.getElementById("btnSync").disabled = true;
+  Papa.parse(SHEET_URL, {
+    download: true, header: true, skipEmptyLines: true, dynamicTyping: false,
+    complete: function(results) {
+      document.getElementById("btnSync").disabled = false;
+      if (results.data && results.data.length > 0) {
+        var hd = Object.keys(results.data[0]).map(function(h) { return h.trim(); });
+        catalogo = results.data.map(function(row) {
+          var v = hd.map(function(k) { return (row[k] || "").toString().trim(); });
+          return { bpoLineId: v[0] || "", shipTo: v[1] || "", itemId: v[2] || "", descripcion: v[3] || "", pesoUnit: v[4] || "" };
+        }).filter(function(x) { return x.itemId; });
+        var t = new Date().toLocaleTimeString();
+        document.getElementById("syncStatus").innerHTML = '<span style="color:#1a6b3c">● Sheet — ' + catalogo.length + ' productos (' + t + ')</span>';
+      } else {
+        document.getElementById("syncStatus").innerHTML = '<span style="color:#c00">● Sin datos</span>';
+      }
+    },
+    error: function() {
+      document.getElementById("btnSync").disabled = false;
+      document.getElementById("syncStatus").innerHTML = '<span style="color:#c00">● Error de conexion</span>';
+    }
+  });
+}
+
+function filterCat(val) {
+  if (!catalogo.length) return [];
+  if (val && val.trim()) {
+    var q = val.toLowerCase();
+    return catalogo.filter(function(c) {
+      return (c.itemId || "").toLowerCase().indexOf(q) >= 0 || (c.descripcion || "").toLowerCase().indexOf(q) >= 0 || (c.bpoLineId || "").toLowerCase().indexOf(q) >= 0;
+    });
+  }
+  return catalogo.slice(0, 30);
+}
+
+function closeDropdowns() { var ds = document.querySelectorAll(".ac-drop"); for (var i = 0; i < ds.length; i++) ds[i].remove(); }
+
+function showDropdown(lineIdx) {
+  closeDropdowns();
+  var ln = lines[lineIdx];
+  var filt = filterCat(ln.itemId);
+  if (!filt.length) return;
+  var wrap = document.getElementById("ac-" + ln.id);
+  if (!wrap) return;
+  var drop = document.createElement("div");
+  drop.className = "ac-drop";
+  for (var i = 0; i < filt.length; i++) {
+    (function(idx) {
+      var it = filt[idx];
+      var d = document.createElement("div");
+      d.className = "ac-item";
+      d.innerHTML = '<b>' + it.itemId + '</b> — ' + it.descripcion + '<div class="detail">' + (it.pesoUnit || "?") + ' kg/pza | ' + it.shipTo + ' | BPO: ' + it.bpoLineId + '</div>';
+      d.onclick = function() {
+        ln.itemId = it.itemId;
+        ln.descripcion = it.descripcion;
+        ln.pesoUnit = it.pesoUnit;
+        ln.bpoLineId = it.bpoLineId;
+        ln.shipTo = it.shipTo;
+        closeDropdowns();
+        renderLines();
+        if (showPrev) renderPreview();
+      };
+      drop.appendChild(d);
+    })(i);
+  }
+  wrap.appendChild(drop);
+}
+
+function updateField(lineIdx, field, val) {
+  lines[lineIdx][field] = val;
+  if (field === "cantidad" || field === "pesoUnit") {
+    var pn = calcPN(lines[lineIdx].pesoUnit, lines[lineIdx].cantidad);
+    var el = document.getElementById("pn-" + lines[lineIdx].id);
+    if (el) {
+      if (pn) { el.innerHTML = '<span class="val">' + pn + ' kg</span>'; el.style.display = "block"; }
+      else { el.style.display = "none"; }
+    }
+  }
+  if (showPrev) renderPreview();
+}
+
+function addLine() { lines.push(mkLine()); renderLines(); }
+function remLine(lineIdx) { if (lines.length > 1) { lines.splice(lineIdx, 1); renderLines(); if (showPrev) renderPreview(); } }
+
+function renderLines() {
+  var c = document.getElementById("linesContainer");
+  var h = "";
+  for (var i = 0; i < lines.length; i++) {
+    var ln = lines[i];
+    var pn = calcPN(ln.pesoUnit, ln.cantidad);
+    h += '<div class="card">';
+    h += '<div class="card-head"><span>Linea ' + (i + 1) + '</span><button onclick="remLine(' + i + ')">✕</button></div>';
+    h += '<div class="mb8"><span class="field-label">Item ID</span><div class="ac-wrap" id="ac-' + ln.id + '"><input class="inp" value="' + ln.itemId + '" oninput="updateField(' + i + ',\'itemId\',this.value);showDropdown(' + i + ')" onfocus="showDropdown(' + i + ')" placeholder="Buscar Item ID"></div></div>';
+    h += '<div class="mb8"><span class="field-label">Descripcion</span><input class="inp" value="' + ln.descripcion + '" oninput="updateField(' + i + ',\'descripcion\',this.value)"></div>';
+    h += '<div class="grid2">';
+    h += '<div><span class="field-label">OC (BPO)</span><input class="inp" value="' + ln.bpoLineId + '" oninput="updateField(' + i + ',\'bpoLineId\',this.value)"></div>';
+    h += '<div><span class="field-label">Ship To</span><input class="inp" value="' + ln.shipTo + '" oninput="updateField(' + i + ',\'shipTo\',this.value)"></div>';
+    h += '</div>';
+    h += '<div class="mb8"><span class="field-label">Orden de Trabajo</span><input class="inp" value="' + ln.ordenTrabajo + '" oninput="updateField(' + i + ',\'ordenTrabajo\',this.value)"></div>';
+    h += '<div class="grid2">';
+    h += '<div><span class="field-label">Cantidad (pzas)</span><input class="inp" type="number" value="' + ln.cantidad + '" oninput="updateField(' + i + ',\'cantidad\',this.value)"></div>';
+    h += '<div><span class="field-label">Peso Unit. (kg)</span><input class="inp" style="background:#f0f0f0" value="' + ln.pesoUnit + '" oninput="updateField(' + i + ',\'pesoUnit\',this.value)"></div>';
+    h += '</div>';
+    h += '<div class="peso-badge" id="pn-' + ln.id + '" style="display:' + (pn ? "block" : "none") + '">Peso Neto: <span class="val">' + (pn || "") + ' kg</span></div>';
+    h += '</div>';
+  }
+  c.innerHTML = h;
+}
+
+function togglePreview() {
+  showPrev = !showPrev;
+  document.getElementById("btnPreview").textContent = showPrev ? "Ocultar" : "Vista previa";
+  renderPreview();
+  document.getElementById("previewArea").style.display = showPrev ? "block" : "none";
+}
+
+function makeLabel(ln) {
+  var fecha = document.getElementById("fecha").value;
+  var pn = calcPN(ln.pesoUnit, ln.cantidad);
+  var st = SHIP_TO[ln.shipTo] || { real: ln.shipTo || "—", dir: "", noProv: "" };
+  var qrData = encodeURIComponent("MKM|" + ln.itemId + "|OC:" + ln.bpoLineId + "|OT:" + ln.ordenTrabajo + "|" + ln.shipTo + "|Q:" + ln.cantidad + "|KG:" + pn + "|" + fecha);
+  var qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=55x55&data=" + qrData + "&margin=1";
+
+  return '<div class="lbl">' +
+    '<div class="lbl-logo"><span>MKM</span></div>' +
+    '<div class="lbl-main">' +
+      '<div class="lbl-addr">' +
+        '<div>' +
+          '<div style="font-weight:800;font-size:7.5px">MAKEN METAL, S.A DE C.V</div>' +
+          '<div style="font-size:6px;color:#444">RFC: MME2012015J0</div>' +
+          '<div style="font-size:6px;color:#444">Prof. José Rodríguez 1035, Col. Universidad</div>' +
+          '<div style="font-size:6px;color:#444">CP 25260, Saltillo, Coahuila</div>' +
+        '</div>' +
+        '<div>' +
+          '<div style="font-weight:700;font-size:7px">' + st.real + '</div>' +
+          '<div style="font-size:5.5px;color:#444;margin-top:1px">' + st.dir + '</div>' +
+          (st.noProv ? '<div style="font-size:6px;margin-top:1px"><b>No. Prov:</b> ' + st.noProv + '</div>' : '') +
+        '</div>' +
+      '</div>' +
+      '<div class="lbl-body">' +
+        '<div class="lbl-info">' +
+          '<div class="lbl-part">' +
+            '<div style="display:flex;gap:6px;align-items:baseline">' +
+              '<span style="font-size:7px;font-weight:700">No. Parte:</span>' +
+              '<span style="font-size:12px;font-weight:900;letter-spacing:0.5px">' + (ln.itemId || "—") + '</span>' +
+            '</div>' +
+            '<div style="font-size:7.5px;margin-top:1px">' + (ln.descripcion || "") + '</div>' +
+          '</div>' +
+          '<div class="lbl-orders">' +
+            '<div><div style="font-size:6px;color:#666">Orden de Compra</div><div style="font-size:8px;font-weight:700">' + (ln.bpoLineId || "—") + '</div></div>' +
+            '<div><div style="font-size:6px;color:#666">Orden de Trabajo</div><div style="font-size:8px;font-weight:700">' + (ln.ordenTrabajo || "—") + '</div></div>' +
+          '</div>' +
+          '<div class="lbl-qty">' +
+            '<div><div style="font-size:6px;color:#666">Cantidad</div><div style="font-size:14px;font-weight:900">' + (ln.cantidad || "—") + '</div><div style="font-size:6px">piezas</div></div>' +
+            '<div><div style="font-size:6px;color:#666">Peso Neto</div><div style="font-size:13px;font-weight:900">' + (pn || "—") + '</div><div style="font-size:6px">kg <span style="color:#999">(' + (ln.pesoUnit || "—") + '/pza)</span></div></div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="lbl-right">' +
+          '<div class="lbl-qr"><img src="' + qrUrl + '" width="55" height="55" alt="QR"></div>' +
+          '<div class="lbl-fecha"><div style="font-size:5.5px;color:#666">Fecha</div><div style="font-size:7px;font-weight:700">' + (fecha || "—") + '</div></div>' +
+          '<div class="lbl-sello"><div style="font-size:6px;color:#ddd;text-align:center;font-weight:700;letter-spacing:0.3px">ACEPTADO<br>CALIDAD</div></div>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+function renderPreview() {
+  var filled = lines.filter(function(l) { return l.itemId.trim() && l.cantidad.trim(); });
+  var area = document.getElementById("previewArea");
+  var btn = document.getElementById("btnPrint");
+  btn.style.display = (showPrev && filled.length > 0) ? "block" : "none";
+  if (!showPrev) return;
+  if (!filled.length) { area.innerHTML = '<p style="color:#888;font-size:13px;text-align:center;padding:20px">Captura Item ID y cantidad.</p>'; return; }
+  var h = '<div class="preview-scroll"><div class="preview-col">';
+  for (var i = 0; i < filled.length; i++) h += makeLabel(filled[i]);
+  h += '</div></div>';
+  area.innerHTML = h;
+}
+
+document.addEventListener("click", function(e) { if (!e.target.closest(".ac-wrap")) closeDropdowns(); });
+
+fetchCatalogo();
+renderLines();
+</script>
+</body>
+</html>
