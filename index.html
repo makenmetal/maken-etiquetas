@@ -217,20 +217,18 @@ function makeLabel(ln){
   var qrUrl="https://api.qrserver.com/v1/create-qr-code/?size=90x90&data="+qrData+"&margin=1";
 
   return '<div class="lbl">'+
-    /* Header: Logo + MAKEN | Cliente */
+    /* Header: MAKEN | Cliente - GRANDE */
     '<div class="lbl-header">'+
-      '<div class="lbl-header-left" style="display:flex;gap:8px;align-items:center">'+
-        '<div style="background:#000;color:#fff;font-weight:900;font-size:14px;padding:6px 8px;letter-spacing:2px;border-radius:3px;line-height:1">MKM</div>'+
-        '<div>'+
-          '<div style="font-weight:800;font-size:10px">MAKEN METAL, S.A DE C.V</div>'+
-          '<div style="font-size:7px;color:#444">RFC: MME2012015J0</div>'+
-          '<div style="font-size:7px;color:#444">Prof. José Rodríguez 1035, Col. Universidad, CP 25260, Saltillo, Coah.</div>'+
-        '</div>'+
+      '<div class="lbl-header-left">'+
+        '<div style="font-weight:900;font-size:14px">MAKEN METAL, S.A DE C.V</div>'+
+        '<div style="font-size:9px;color:#444;margin-top:2px">RFC: MME2012015J0</div>'+
+        '<div style="font-size:9px;color:#444">Prof. José Rodríguez 1035, Col. Universidad</div>'+
+        '<div style="font-size:9px;color:#444">CP 25260, Saltillo, Coahuila</div>'+
       '</div>'+
       '<div class="lbl-header-right">'+
-        '<div style="font-weight:700;font-size:10px">'+st.real+'</div>'+
-        '<div style="font-size:8px;color:#444;margin-top:2px">'+st.dir+'</div>'+
-        (st.noProv?'<div style="font-size:9px;margin-top:2px"><b>No. Prov:</b> '+st.noProv+'</div>':'')+
+        '<div style="font-weight:800;font-size:13px">'+st.real+'</div>'+
+        '<div style="font-size:9px;color:#444;margin-top:2px">'+st.dir+'</div>'+
+        (st.noProv?'<div style="font-size:10px;margin-top:2px"><b>No. Prov:</b> '+st.noProv+'</div>':'')+
       '</div>'+
     '</div>'+
 
@@ -277,13 +275,16 @@ function makeLabel(ln){
       '</div>'+
     '</div>'+
 
-    /* Footer: QR + Sello calidad grande */
+    /* Footer: LOGO | QR | SELLO CALIDAD */
     '<div class="lbl-footer">'+
-      '<div class="lbl-footer-center">'+
+      '<div style="flex:1;display:flex;align-items:center;justify-content:center;border-right:1.5px solid #000;padding:6px">'+
+        '<div style="background:#000;color:#fff;font-weight:900;font-size:28px;padding:10px 16px;letter-spacing:4px;border-radius:4px;line-height:1">MKM</div>'+
+      '</div>'+
+      '<div style="display:flex;align-items:center;justify-content:center;padding:6px;border-right:1.5px solid #000">'+
         '<img src="'+qrUrl+'" width="75" height="75" alt="QR">'+
       '</div>'+
-      '<div class="lbl-footer-right" style="flex:1">'+
-        '<div style="font-size:10px;color:#ccc;text-align:center;font-weight:700;letter-spacing:0.5px">ACEPTADO<br>CALIDAD</div>'+
+      '<div style="flex:1;display:flex;align-items:center;justify-content:center">'+
+        '<div style="font-size:11px;color:#ccc;text-align:center;font-weight:700;letter-spacing:0.5px">ACEPTADO<br>CALIDAD</div>'+
       '</div>'+
     '</div>'+
   '</div>';
