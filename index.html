@@ -111,7 +111,7 @@ var showPrev = false;
 var lineId = 0;
 
 function mkLine(){lineId++;return{id:lineId,bpoLineId:"",shipTo:"",itemId:"",descripcion:"",ordenTrabajo:"",cantidad:"",pesoUnit:""};}
-function calcPN(pu,c){var a=parseFloat(pu),b=parseFloat(c);return(isNaN(a)||isNaN(b)||b===0)?"":(a*b).toFixed(3);}
+function calcPN(pu,c){var a=parseFloat(pu),b=parseFloat(c);return(isNaN(a)||isNaN(b)||b===0)?"":(a*b).toFixed(2);}
 
 document.getElementById("fecha").value=new Date().toISOString().split("T")[0];
 lines.push(mkLine());
@@ -217,12 +217,15 @@ function makeLabel(ln){
   var qrUrl="https://api.qrserver.com/v1/create-qr-code/?size=90x90&data="+qrData+"&margin=1";
 
   return '<div class="lbl">'+
-    /* Header: MAKEN | Cliente */
+    /* Header: Logo + MAKEN | Cliente */
     '<div class="lbl-header">'+
-      '<div class="lbl-header-left">'+
-        '<div style="font-weight:800;font-size:11px">MKM — MAKEN METAL, S.A DE C.V</div>'+
-        '<div style="font-size:8px;color:#444">RFC: MME2012015J0</div>'+
-        '<div style="font-size:8px;color:#444">Prof. José Rodríguez 1035, Col. Universidad, CP 25260, Saltillo, Coah.</div>'+
+      '<div class="lbl-header-left" style="display:flex;gap:8px;align-items:center">'+
+        '<div style="background:#000;color:#fff;font-weight:900;font-size:14px;padding:6px 8px;letter-spacing:2px;border-radius:3px;line-height:1">MKM</div>'+
+        '<div>'+
+          '<div style="font-weight:800;font-size:10px">MAKEN METAL, S.A DE C.V</div>'+
+          '<div style="font-size:7px;color:#444">RFC: MME2012015J0</div>'+
+          '<div style="font-size:7px;color:#444">Prof. José Rodríguez 1035, Col. Universidad, CP 25260, Saltillo, Coah.</div>'+
+        '</div>'+
       '</div>'+
       '<div class="lbl-header-right">'+
         '<div style="font-weight:700;font-size:10px">'+st.real+'</div>'+
@@ -259,7 +262,7 @@ function makeLabel(ln){
 
     /* Detail row: OT + Peso Neto + Fecha */
     '<div class="lbl-detail-row">'+
-      '<div class="lbl-detail-cell">'+
+      '<div class="lbl-detail-cell" style="flex:2">'+
         '<div class="lbl-detail-label">Orden de Trabajo</div>'+
         '<div style="font-size:14px;font-weight:800">'+(ln.ordenTrabajo||"—")+'</div>'+
       '</div>'+
