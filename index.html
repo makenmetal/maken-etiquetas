@@ -16,7 +16,8 @@ h2{font-size:18px;margin-bottom:2px}
 .btn:active{opacity:0.7}
 .btn-sync{background:var(--greenbg)}
 .btn-dark{background:#222;color:#fff;border:none}
-.btn-print{width:100%;padding:12px;font-size:15px;font-weight:700;border-radius:8px;margin-bottom:8px;cursor:pointer;border:none;color:#fff}
+.btn-green{background:var(--green);color:#fff;border:none;width:100%;padding:12px;font-size:15px;font-weight:700;border-radius:8px;margin-bottom:16px}
+.status{font-size:12px;font-weight:600}
 .field-label{font-size:11px;font-weight:600;color:var(--muted);margin-bottom:2px;display:block}
 .inp{width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:14px}
 .card{border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;background:var(--card)}
@@ -34,95 +35,33 @@ h2{font-size:18px;margin-bottom:2px}
 .ac-item .detail{color:#888;font-size:11px}
 .actions{display:flex;gap:8px;margin-bottom:16px}
 .actions button{flex:1;padding:10px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
-.preview-scroll{overflow-x:auto;padding-bottom:10px}
 
-/* LABEL BASE */
-.lbl{font-family:Arial,sans-serif;display:flex;background:#fff;color:#000;overflow:hidden;page-break-inside:avoid;page-break-after:always}
-.lbl-logo{display:flex;align-items:center;justify-content:center;flex-shrink:0;border-right:1px solid #000}
-.lbl-logo span{writing-mode:vertical-rl;transform:rotate(180deg);font-weight:900;letter-spacing:2px}
-.lbl-main{flex:1;display:flex;flex-direction:column}
-.lbl-addr{display:flex;border-bottom:1px solid #000}
-.lbl-addr>div{flex:1;line-height:1.25}
-.lbl-addr>div:first-child{border-right:1px solid #000}
-.lbl-body{display:flex;flex:1}
-.lbl-info{flex:1;display:flex;flex-direction:column;border-right:1px solid #000}
-.lbl-part{border-bottom:1px solid #000}
-.lbl-orders{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #000}
-.lbl-orders>div:first-child{border-right:1px solid #000}
-.lbl-qty{display:flex;flex:1;align-items:center}
-.lbl-qty>div{flex:1;text-align:center}
-.lbl-qty>div:first-child{border-right:1px solid #000}
-.lbl-right{display:flex;flex-direction:column}
-.lbl-qr{flex:1;display:flex;align-items:center;justify-content:center;border-bottom:1px solid #000}
-.lbl-fecha{border-bottom:1px solid #000;text-align:center}
-.lbl-sello{flex:0.8;display:flex;align-items:center;justify-content:center}
+/* === LABEL 4x5 inches === */
+.lbl{width:4in;height:5in;border:1.5px solid #000;font-family:Arial,sans-serif;display:flex;flex-direction:column;background:#fff;color:#000;overflow:hidden;page-break-inside:avoid}
+.lbl-header{display:flex;border-bottom:2px solid #000}
+.lbl-header-left{flex:1;padding:6px 8px;border-right:1.5px solid #000;line-height:1.3}
+.lbl-header-right{flex:1;padding:6px 8px;line-height:1.3}
+.lbl-big-row{display:flex;border-bottom:2px solid #000}
+.lbl-big-cell{flex:1;padding:6px 8px;text-align:center;border-right:1.5px solid #000}
+.lbl-big-cell:last-child{border-right:none}
+.lbl-big-label{font-size:9px;color:#555;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px}
+.lbl-big-val{font-weight:900;line-height:1.1}
+.lbl-detail-row{display:flex;border-bottom:1.5px solid #000}
+.lbl-detail-cell{flex:1;padding:5px 8px;border-right:1.5px solid #000}
+.lbl-detail-cell:last-child{border-right:none}
+.lbl-detail-label{font-size:8px;color:#666;margin-bottom:1px}
+.lbl-detail-val{font-size:11px;font-weight:700}
+.lbl-footer{display:flex;flex:1}
+.lbl-footer-left{flex:1;display:flex;flex-direction:column;justify-content:center;padding:6px 8px;border-right:1.5px solid #000}
+.lbl-footer-center{display:flex;align-items:center;justify-content:center;padding:6px;border-right:1.5px solid #000}
+.lbl-footer-right{display:flex;align-items:center;justify-content:center;width:90px}
 
-/* SIZE: real 46x103mm */
-.lbl-real{border:2px solid #000;width:103mm;height:46mm}
-.lbl-real .lbl-logo{width:16px}
-.lbl-real .lbl-logo span{font-size:9px}
-.lbl-real .lbl-addr>div{padding:2px 3px}
-.lbl-real .h1{font-weight:800;font-size:7.5px}
-.lbl-real .h2{font-weight:700;font-size:7px}
-.lbl-real .sm{font-size:6px;color:#444}
-.lbl-real .xs{font-size:5.5px;color:#444}
-.lbl-real .lbl-part{padding:3px 4px}
-.lbl-real .part-id{font-size:12px;font-weight:900;letter-spacing:0.5px}
-.lbl-real .part-lbl{font-size:7px;font-weight:700}
-.lbl-real .part-desc{font-size:7.5px}
-.lbl-real .lbl-orders>div{padding:2px 4px}
-.lbl-real .ord-lbl{font-size:6px;color:#666}
-.lbl-real .ord-val{font-size:8px;font-weight:700}
-.lbl-real .lbl-qty>div{padding:2px 4px}
-.lbl-real .qty-lbl{font-size:6px;color:#666}
-.lbl-real .qty-val{font-size:14px;font-weight:900}
-.lbl-real .qty-unit{font-size:6px}
-.lbl-real .pn-val{font-size:13px;font-weight:900}
-.lbl-real .pn-unit{font-size:6px}
-.lbl-real .lbl-right{width:80px}
-.lbl-real .lbl-qr{padding:2px}
-.lbl-real .lbl-qr img{width:55px;height:55px}
-.lbl-real .lbl-fecha{padding:2px 3px}
-.lbl-real .fecha-lbl{font-size:5.5px;color:#666}
-.lbl-real .fecha-val{font-size:7px;font-weight:700}
-.lbl-real .sello-txt{font-size:6px;color:#ddd;font-weight:700;letter-spacing:0.3px;text-align:center}
-.lbl-real .noprov{font-size:6px;margin-top:1px}
-
-/* SIZE: carta (scaled up) */
-.lbl-carta{border:3px solid #000;width:180mm;height:80mm;margin-bottom:4mm}
-.lbl-carta .lbl-logo{width:28px}
-.lbl-carta .lbl-logo span{font-size:16px;letter-spacing:3px}
-.lbl-carta .lbl-addr>div{padding:4px 6px}
-.lbl-carta .h1{font-weight:800;font-size:13px}
-.lbl-carta .h2{font-weight:700;font-size:12px}
-.lbl-carta .sm{font-size:10px;color:#333}
-.lbl-carta .xs{font-size:9.5px;color:#333}
-.lbl-carta .lbl-part{padding:5px 8px}
-.lbl-carta .part-id{font-size:22px;font-weight:900;letter-spacing:1px}
-.lbl-carta .part-lbl{font-size:12px;font-weight:700}
-.lbl-carta .part-desc{font-size:13px}
-.lbl-carta .lbl-orders>div{padding:4px 8px}
-.lbl-carta .ord-lbl{font-size:10px;color:#555}
-.lbl-carta .ord-val{font-size:14px;font-weight:700}
-.lbl-carta .lbl-qty>div{padding:4px 8px}
-.lbl-carta .qty-lbl{font-size:10px;color:#555}
-.lbl-carta .qty-val{font-size:26px;font-weight:900}
-.lbl-carta .qty-unit{font-size:10px}
-.lbl-carta .pn-val{font-size:24px;font-weight:900}
-.lbl-carta .pn-unit{font-size:10px}
-.lbl-carta .lbl-right{width:140px}
-.lbl-carta .lbl-qr{padding:4px}
-.lbl-carta .lbl-qr img{width:90px;height:90px}
-.lbl-carta .lbl-fecha{padding:3px 6px}
-.lbl-carta .fecha-lbl{font-size:9px;color:#555}
-.lbl-carta .fecha-val{font-size:12px;font-weight:700}
-.lbl-carta .sello-txt{font-size:10px;color:#ddd;font-weight:700;letter-spacing:0.5px;text-align:center}
-.lbl-carta .noprov{font-size:10px;margin-top:2px}
-
+/* PRINT: 4 labels per letter page (2x2 grid) */
 @media print{
-  body{background:#fff;padding:0;max-width:none}
+  body{background:#fff;padding:0;max-width:none;margin:0}
   .no-print{display:none!important}
-  .preview-scroll{overflow:visible}
+  .print-grid{display:grid;grid-template-columns:4in 4in;grid-template-rows:5in 5in;justify-content:center;align-content:center;gap:0;width:8.5in;height:11in;margin:0 auto;padding:0.25in 0.25in}
+  .lbl{border:1.5px solid #000;margin:0}
 }
 </style>
 </head>
@@ -130,11 +69,11 @@ h2{font-size:18px;margin-bottom:2px}
 
 <div class="no-print">
   <h2>Etiquetas de Empaque</h2>
-  <p class="sub">MAKEN METAL S.A. DE C.V.</p>
+  <p class="sub">MAKEN METAL — 4 x 5 pulgadas (Uline S-17381)</p>
 
   <div class="toolbar">
     <button class="btn btn-sync" id="btnSync" onclick="fetchCatalogo()">⟳ Sync</button>
-    <span class="status" id="syncStatus" style="color:#666;font-size:12px;font-weight:600">● Cargando...</span>
+    <span class="status" id="syncStatus" style="color:#666">● Cargando...</span>
   </div>
 
   <div class="mb8">
@@ -149,10 +88,7 @@ h2{font-size:18px;margin-bottom:2px}
     <button class="btn btn-dark" id="btnPreview" onclick="togglePreview()">Vista previa</button>
   </div>
 
-  <div id="printButtons" style="display:none">
-    <button class="btn-print" style="background:#1a6b3c" onclick="doPrint('carta')">🖨 Imprimir en Hoja Carta</button>
-    <button class="btn-print" style="background:#333" onclick="doPrint('etiqueta')">🏷 Imprimir en Etiqueta 46x103mm</button>
-  </div>
+  <button class="btn-green" id="btnPrint" style="display:none" onclick="window.print()">Imprimir etiquetas</button>
 </div>
 
 <div id="previewArea" style="display:none"></div>
@@ -177,7 +113,7 @@ var lineId = 0;
 function mkLine(){lineId++;return{id:lineId,bpoLineId:"",shipTo:"",itemId:"",descripcion:"",ordenTrabajo:"",cantidad:"",pesoUnit:""};}
 function calcPN(pu,c){var a=parseFloat(pu),b=parseFloat(c);return(isNaN(a)||isNaN(b)||b===0)?"":(a*b).toFixed(3);}
 
-document.getElementById("fecha").value = new Date().toISOString().split("T")[0];
+document.getElementById("fecha").value=new Date().toISOString().split("T")[0];
 lines.push(mkLine());
 
 function fetchCatalogo(){
@@ -209,32 +145,21 @@ function fetchCatalogo(){
 
 function filterCat(val){
   if(!catalogo.length)return[];
-  if(val&&val.trim()){
-    var q=val.toLowerCase();
-    return catalogo.filter(function(c){
-      return(c.itemId||"").toLowerCase().indexOf(q)>=0||(c.descripcion||"").toLowerCase().indexOf(q)>=0||(c.bpoLineId||"").toLowerCase().indexOf(q)>=0;
-    });
-  }
+  if(val&&val.trim()){var q=val.toLowerCase();return catalogo.filter(function(c){return(c.itemId||"").toLowerCase().indexOf(q)>=0||(c.descripcion||"").toLowerCase().indexOf(q)>=0||(c.bpoLineId||"").toLowerCase().indexOf(q)>=0;});}
   return catalogo.slice(0,30);
 }
 
 function closeDropdowns(){var ds=document.querySelectorAll(".ac-drop");for(var i=0;i<ds.length;i++)ds[i].remove();}
 
-function showDropdown(lineIdx){
+function showDropdown(li){
   closeDropdowns();
-  var ln=lines[lineIdx];
-  var filt=filterCat(ln.itemId);
-  if(!filt.length)return;
-  var wrap=document.getElementById("ac-"+ln.id);
-  if(!wrap)return;
-  var drop=document.createElement("div");
-  drop.className="ac-drop";
+  var ln=lines[li];var filt=filterCat(ln.itemId);if(!filt.length)return;
+  var wrap=document.getElementById("ac-"+ln.id);if(!wrap)return;
+  var drop=document.createElement("div");drop.className="ac-drop";
   for(var i=0;i<filt.length;i++){
     (function(idx){
-      var it=filt[idx];
-      var d=document.createElement("div");
-      d.className="ac-item";
-      d.innerHTML='<b>'+it.itemId+'</b> — '+it.descripcion+'<div class="detail">'+(it.pesoUnit||"?")+" kg/pza | "+it.shipTo+" | BPO: "+it.bpoLineId+"</div>";
+      var it=filt[idx];var d=document.createElement("div");d.className="ac-item";
+      d.innerHTML='<b>'+it.itemId+'</b> — '+it.descripcion+'<div class="detail">'+( it.pesoUnit||"?")+ ' kg/pza | '+it.shipTo+' | BPO: '+it.bpoLineId+'</div>';
       d.onclick=function(){
         ln.itemId=it.itemId;ln.descripcion=it.descripcion;ln.pesoUnit=it.pesoUnit;ln.bpoLineId=it.bpoLineId;ln.shipTo=it.shipTo;
         closeDropdowns();renderLines();if(showPrev)renderPreview();
@@ -245,12 +170,12 @@ function showDropdown(lineIdx){
   wrap.appendChild(drop);
 }
 
-function updateField(lineIdx,field,val){
-  lines[lineIdx][field]=val;
+function updateField(li,field,val){
+  lines[li][field]=val;
   if(field==="cantidad"||field==="pesoUnit"){
-    var pn=calcPN(lines[lineIdx].pesoUnit,lines[lineIdx].cantidad);
-    var el=document.getElementById("pn-"+lines[lineIdx].id);
-    if(el){if(pn){el.innerHTML='Peso Neto: <span class="val">'+pn+" kg</span>";el.style.display="block";}else{el.style.display="none";}}
+    var pn=calcPN(lines[li].pesoUnit,lines[li].cantidad);
+    var el=document.getElementById("pn-"+lines[li].id);
+    if(el){if(pn){el.innerHTML='Peso Neto: <span class="val">'+pn+' kg</span>';el.style.display="block";}else{el.style.display="none";}}
   }
   if(showPrev)renderPreview();
 }
@@ -259,26 +184,20 @@ function addLine(){lines.push(mkLine());renderLines();}
 function remLine(li){if(lines.length>1){lines.splice(li,1);renderLines();if(showPrev)renderPreview();}}
 
 function renderLines(){
-  var c=document.getElementById("linesContainer");
-  var h="";
+  var c=document.getElementById("linesContainer");var h="";
   for(var i=0;i<lines.length;i++){
-    var ln=lines[i];
-    var pn=calcPN(ln.pesoUnit,ln.cantidad);
+    var ln=lines[i];var pn=calcPN(ln.pesoUnit,ln.cantidad);
     h+='<div class="card">';
-    h+='<div class="card-head"><span>Linea '+(i+1)+"</span><button onclick=\"remLine("+i+")\">✕</button></div>";
-    h+='<div class="mb8"><span class="field-label">Item ID</span><div class="ac-wrap" id="ac-'+ln.id+'"><input class="inp" value="'+ln.itemId+'" oninput="updateField('+i+",\'itemId\',this.value);showDropdown("+i+')" onfocus="showDropdown('+i+')" placeholder="Buscar Item ID"></div></div>';
-    h+='<div class="mb8"><span class="field-label">Descripcion</span><input class="inp" value="'+ln.descripcion+'" oninput="updateField('+i+",\'descripcion\',this.value)\"></div>";
-    h+='<div class="grid2">';
-    h+='<div><span class="field-label">OC (BPO)</span><input class="inp" value="'+ln.bpoLineId+'" oninput="updateField('+i+",\'bpoLineId\',this.value)\"></div>";
-    h+='<div><span class="field-label">Ship To</span><input class="inp" value="'+ln.shipTo+'" oninput="updateField('+i+",\'shipTo\',this.value)\"></div>";
-    h+="</div>";
-    h+='<div class="mb8"><span class="field-label">Orden de Trabajo</span><input class="inp" value="'+ln.ordenTrabajo+'" oninput="updateField('+i+",\'ordenTrabajo\',this.value)\"></div>";
-    h+='<div class="grid2">';
-    h+='<div><span class="field-label">Cantidad (pzas)</span><input class="inp" type="number" value="'+ln.cantidad+'" oninput="updateField('+i+",\'cantidad\',this.value)\"></div>";
-    h+='<div><span class="field-label">Peso Unit. (kg)</span><input class="inp" style="background:#f0f0f0" value="'+ln.pesoUnit+'" oninput="updateField('+i+",\'pesoUnit\',this.value)\"></div>";
-    h+="</div>";
-    h+='<div class="peso-badge" id="pn-'+ln.id+'" style="display:'+(pn?"block":"none")+'">Peso Neto: <span class="val">'+(pn||"")+" kg</span></div>";
-    h+="</div>";
+    h+='<div class="card-head"><span>Linea '+(i+1)+'</span><button onclick="remLine('+i+')">✕</button></div>';
+    h+='<div class="mb8"><span class="field-label">Item ID</span><div class="ac-wrap" id="ac-'+ln.id+'"><input class="inp" value="'+ln.itemId+'" oninput="updateField('+i+',\'itemId\',this.value);showDropdown('+i+')" onfocus="showDropdown('+i+')" placeholder="Buscar Item ID"></div></div>';
+    h+='<div class="mb8"><span class="field-label">Descripcion</span><input class="inp" value="'+ln.descripcion+'" oninput="updateField('+i+',\'descripcion\',this.value)"></div>';
+    h+='<div class="grid2"><div><span class="field-label">OC (BPO)</span><input class="inp" value="'+ln.bpoLineId+'" oninput="updateField('+i+',\'bpoLineId\',this.value)"></div>';
+    h+='<div><span class="field-label">Ship To</span><input class="inp" value="'+ln.shipTo+'" oninput="updateField('+i+',\'shipTo\',this.value)"></div></div>';
+    h+='<div class="mb8"><span class="field-label">Orden de Trabajo</span><input class="inp" value="'+ln.ordenTrabajo+'" oninput="updateField('+i+',\'ordenTrabajo\',this.value)"></div>';
+    h+='<div class="grid2"><div><span class="field-label">Cantidad (pzas)</span><input class="inp" type="number" value="'+ln.cantidad+'" oninput="updateField('+i+',\'cantidad\',this.value)"></div>';
+    h+='<div><span class="field-label">Peso Unit. (kg)</span><input class="inp" style="background:#f0f0f0" value="'+ln.pesoUnit+'" oninput="updateField('+i+',\'pesoUnit\',this.value)"></div></div>';
+    h+='<div class="peso-badge" id="pn-'+ln.id+'" style="display:'+(pn?"block":"none")+'">Peso Neto: <span class="val">'+(pn||"")+' kg</span></div>';
+    h+='</div>';
   }
   c.innerHTML=h;
 }
@@ -290,54 +209,75 @@ function togglePreview(){
   document.getElementById("previewArea").style.display=showPrev?"block":"none";
 }
 
-function makeLabel(ln,size){
+function makeLabel(ln){
   var fecha=document.getElementById("fecha").value;
   var pn=calcPN(ln.pesoUnit,ln.cantidad);
   var st=SHIP_TO[ln.shipTo]||{real:ln.shipTo||"—",dir:"",noProv:""};
   var qrData=encodeURIComponent("MKM|"+ln.itemId+"|OC:"+ln.bpoLineId+"|OT:"+ln.ordenTrabajo+"|"+ln.shipTo+"|Q:"+ln.cantidad+"|KG:"+pn+"|"+fecha);
-  var qrSize=size==="carta"?"90":"55";
-  var qrUrl="https://api.qrserver.com/v1/create-qr-code/?size="+qrSize+"x"+qrSize+"&data="+qrData+"&margin=1";
-  var cls=size==="carta"?"lbl lbl-carta":"lbl lbl-real";
+  var qrUrl="https://api.qrserver.com/v1/create-qr-code/?size=90x90&data="+qrData+"&margin=1";
 
-  return '<div class="'+cls+'">'+
-    '<div class="lbl-logo"><span>MKM</span></div>'+
-    '<div class="lbl-main">'+
-      '<div class="lbl-addr">'+
-        '<div>'+
-          '<div class="h1">MAKEN METAL, S.A DE C.V</div>'+
-          '<div class="sm">RFC: MME2012015J0</div>'+
-          '<div class="sm">Prof. José Rodríguez 1035, Col. Universidad</div>'+
-          '<div class="sm">CP 25260, Saltillo, Coahuila</div>'+
-        '</div>'+
-        '<div>'+
-          '<div class="h2">'+st.real+'</div>'+
-          '<div class="xs">'+st.dir+'</div>'+
-          (st.noProv?'<div class="noprov"><b>No. Prov:</b> '+st.noProv+'</div>':'')+
-        '</div>'+
+  return '<div class="lbl">'+
+    /* Header: MAKEN | Cliente */
+    '<div class="lbl-header">'+
+      '<div class="lbl-header-left">'+
+        '<div style="font-weight:800;font-size:11px">MKM — MAKEN METAL, S.A DE C.V</div>'+
+        '<div style="font-size:8px;color:#444">RFC: MME2012015J0</div>'+
+        '<div style="font-size:8px;color:#444">Prof. José Rodríguez 1035, Col. Universidad, CP 25260, Saltillo, Coah.</div>'+
       '</div>'+
-      '<div class="lbl-body">'+
-        '<div class="lbl-info">'+
-          '<div class="lbl-part">'+
-            '<div style="display:flex;gap:6px;align-items:baseline">'+
-              '<span class="part-lbl">No. Parte:</span>'+
-              '<span class="part-id">'+(ln.itemId||"—")+'</span>'+
-            '</div>'+
-            '<div class="part-desc">'+(ln.descripcion||"")+'</div>'+
-          '</div>'+
-          '<div class="lbl-orders">'+
-            '<div><div class="ord-lbl">Orden de Compra</div><div class="ord-val">'+(ln.bpoLineId||"—")+'</div></div>'+
-            '<div><div class="ord-lbl">Orden de Trabajo</div><div class="ord-val">'+(ln.ordenTrabajo||"—")+'</div></div>'+
-          '</div>'+
-          '<div class="lbl-qty">'+
-            '<div><div class="qty-lbl">Cantidad</div><div class="qty-val">'+(ln.cantidad||"—")+'</div><div class="qty-unit">piezas</div></div>'+
-            '<div><div class="qty-lbl">Peso Neto</div><div class="pn-val">'+(pn||"—")+'</div><div class="pn-unit">kg <span style="color:#999">'+(ln.pesoUnit||"—")+'/pza</span></div></div>'+
-          '</div>'+
-        '</div>'+
-        '<div class="lbl-right">'+
-          '<div class="lbl-qr"><img src="'+qrUrl+'" width="'+qrSize+'" height="'+qrSize+'" alt="QR"></div>'+
-          '<div class="lbl-fecha"><div class="fecha-lbl">Fecha</div><div class="fecha-val">'+(fecha||"—")+'</div></div>'+
-          '<div class="lbl-sello"><div class="sello-txt">ACEPTADO<br>CALIDAD</div></div>'+
-        '</div>'+
+      '<div class="lbl-header-right">'+
+        '<div style="font-weight:700;font-size:10px">'+st.real+'</div>'+
+        '<div style="font-size:8px;color:#444;margin-top:2px">'+st.dir+'</div>'+
+        (st.noProv?'<div style="font-size:9px;margin-top:2px"><b>No. Prov:</b> '+st.noProv+'</div>':'')+
+      '</div>'+
+    '</div>'+
+
+    /* BIG ROW: No. Parte + OC + Cantidad */
+    '<div class="lbl-big-row">'+
+      '<div class="lbl-big-cell" style="flex:1.5">'+
+        '<div class="lbl-big-label">No. de Parte</div>'+
+        '<div class="lbl-big-val" style="font-size:26px">'+( ln.itemId||"—")+'</div>'+
+        '<div style="font-size:11px;margin-top:2px;color:#333">'+( ln.descripcion||"")+'</div>'+
+      '</div>'+
+      '<div class="lbl-big-cell">'+
+        '<div class="lbl-big-label">Cantidad</div>'+
+        '<div class="lbl-big-val" style="font-size:34px">'+(ln.cantidad||"—")+'</div>'+
+        '<div style="font-size:10px;color:#555">piezas</div>'+
+      '</div>'+
+    '</div>'+
+
+    /* Orden de Compra grande */
+    '<div style="border-bottom:2px solid #000;padding:6px 10px">'+
+      '<div style="font-size:9px;color:#555;text-transform:uppercase;letter-spacing:0.5px">Orden de Compra (BPO)</div>'+
+      '<div style="font-size:22px;font-weight:900">'+(ln.bpoLineId||"—")+'</div>'+
+    '</div>'+
+
+    /* Detail row: OT + Peso Neto + Fecha */
+    '<div class="lbl-detail-row">'+
+      '<div class="lbl-detail-cell">'+
+        '<div class="lbl-detail-label">Orden de Trabajo</div>'+
+        '<div style="font-size:14px;font-weight:800">'+(ln.ordenTrabajo||"—")+'</div>'+
+      '</div>'+
+      '<div class="lbl-detail-cell">'+
+        '<div class="lbl-detail-label">Peso Neto</div>'+
+        '<div style="font-size:14px;font-weight:800">'+(pn||"—")+' kg</div>'+
+        '<div style="font-size:7px;color:#888">('+(ln.pesoUnit||"—")+' kg/pza)</div>'+
+      '</div>'+
+      '<div class="lbl-detail-cell" style="border-right:none">'+
+        '<div class="lbl-detail-label">Fecha</div>'+
+        '<div style="font-size:12px;font-weight:700">'+(fecha||"—")+'</div>'+
+      '</div>'+
+    '</div>'+
+
+    /* Footer: QR + Sello */
+    '<div class="lbl-footer">'+
+      '<div class="lbl-footer-left">'+
+        '<div style="font-size:9px;color:#555">Ship To: <b>'+( ln.shipTo||"—")+'</b></div>'+
+      '</div>'+
+      '<div class="lbl-footer-center">'+
+        '<img src="'+qrUrl+'" width="75" height="75" alt="QR">'+
+      '</div>'+
+      '<div class="lbl-footer-right">'+
+        '<div style="font-size:8px;color:#ccc;text-align:center;font-weight:700;letter-spacing:0.5px">ACEPTADO<br>CALIDAD</div>'+
       '</div>'+
     '</div>'+
   '</div>';
@@ -346,79 +286,19 @@ function makeLabel(ln,size){
 function renderPreview(){
   var filled=lines.filter(function(l){return l.itemId.trim()&&l.cantidad.trim();});
   var area=document.getElementById("previewArea");
-  var btns=document.getElementById("printButtons");
-  btns.style.display=(showPrev&&filled.length>0)?"block":"none";
+  var btn=document.getElementById("btnPrint");
+  btn.style.display=(showPrev&&filled.length>0)?"block":"none";
   if(!showPrev)return;
   if(!filled.length){area.innerHTML='<p style="color:#888;font-size:13px;text-align:center;padding:20px">Captura Item ID y cantidad.</p>';return;}
-  var h='<div class="preview-scroll"><div style="display:flex;flex-direction:column;gap:6px;align-items:center;min-width:390px">';
-  for(var i=0;i<filled.length;i++) h+=makeLabel(filled[i],"real");
+  /* Preview: show individual labels */
+  var h='<div class="no-print" style="overflow-x:auto"><div style="display:flex;flex-direction:column;gap:8px;align-items:center;min-width:300px">';
+  for(var i=0;i<filled.length;i++) h+=makeLabel(filled[i]);
   h+='</div></div>';
+  /* Print: 4 per page grid */
+  h+='<div class="print-grid" style="display:none">';
+  for(var j=0;j<filled.length;j++) h+=makeLabel(filled[j]);
+  h+='</div>';
   area.innerHTML=h;
-}
-
-function doPrint(size){
-  var filled=lines.filter(function(l){return l.itemId.trim()&&l.cantidad.trim();});
-  if(!filled.length)return;
-  var w=window.open("","_blank");
-  var labels="";
-  for(var i=0;i<filled.length;i++) labels+=makeLabel(filled[i],size);
-  var pageSize=size==="carta"?"letter":"custom";
-  w.document.write('<!DOCTYPE html><html><head><title>Etiquetas MKM</title><style>'+
-    '*{box-sizing:border-box;margin:0;padding:0}'+
-    'body{font-family:Arial,sans-serif;padding:'+(size==="carta"?"10mm":"1mm")+'}'+
-    '.lbl{font-family:Arial,sans-serif;display:flex;background:#fff;color:#000;overflow:hidden;page-break-inside:avoid;page-break-after:always}'+
-    '.lbl-logo{display:flex;align-items:center;justify-content:center;flex-shrink:0;border-right:1px solid #000}'+
-    '.lbl-logo span{writing-mode:vertical-rl;transform:rotate(180deg);font-weight:900;letter-spacing:2px}'+
-    '.lbl-main{flex:1;display:flex;flex-direction:column}'+
-    '.lbl-addr{display:flex;border-bottom:1px solid #000}'+
-    '.lbl-addr>div{flex:1;line-height:1.25}'+
-    '.lbl-addr>div:first-child{border-right:1px solid #000}'+
-    '.lbl-body{display:flex;flex:1}'+
-    '.lbl-info{flex:1;display:flex;flex-direction:column;border-right:1px solid #000}'+
-    '.lbl-part{border-bottom:1px solid #000}'+
-    '.lbl-orders{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #000}'+
-    '.lbl-orders>div:first-child{border-right:1px solid #000}'+
-    '.lbl-qty{display:flex;flex:1;align-items:center}'+
-    '.lbl-qty>div{flex:1;text-align:center}'+
-    '.lbl-qty>div:first-child{border-right:1px solid #000}'+
-    '.lbl-right{display:flex;flex-direction:column}'+
-    '.lbl-qr{flex:1;display:flex;align-items:center;justify-content:center;border-bottom:1px solid #000}'+
-    '.lbl-fecha{border-bottom:1px solid #000;text-align:center}'+
-    '.lbl-sello{flex:0.8;display:flex;align-items:center;justify-content:center}'+
-    // Real size styles
-    '.lbl-real{border:2px solid #000;width:103mm;height:46mm}'+
-    '.lbl-real .lbl-logo{width:16px}.lbl-real .lbl-logo span{font-size:9px}'+
-    '.lbl-real .lbl-addr>div{padding:2px 3px}'+
-    '.lbl-real .h1{font-weight:800;font-size:7.5px}.lbl-real .h2{font-weight:700;font-size:7px}'+
-    '.lbl-real .sm{font-size:6px;color:#444}.lbl-real .xs{font-size:5.5px;color:#444}'+
-    '.lbl-real .lbl-part{padding:3px 4px}.lbl-real .part-id{font-size:12px;font-weight:900;letter-spacing:0.5px}'+
-    '.lbl-real .part-lbl{font-size:7px;font-weight:700}.lbl-real .part-desc{font-size:7.5px}'+
-    '.lbl-real .lbl-orders>div{padding:2px 4px}.lbl-real .ord-lbl{font-size:6px;color:#666}.lbl-real .ord-val{font-size:8px;font-weight:700}'+
-    '.lbl-real .lbl-qty>div{padding:2px 4px}.lbl-real .qty-lbl{font-size:6px;color:#666}.lbl-real .qty-val{font-size:14px;font-weight:900}.lbl-real .qty-unit{font-size:6px}'+
-    '.lbl-real .pn-val{font-size:13px;font-weight:900}.lbl-real .pn-unit{font-size:6px}'+
-    '.lbl-real .lbl-right{width:80px}.lbl-real .lbl-qr{padding:2px}.lbl-real .lbl-qr img{width:55px;height:55px}'+
-    '.lbl-real .lbl-fecha{padding:2px 3px}.lbl-real .fecha-lbl{font-size:5.5px;color:#666}.lbl-real .fecha-val{font-size:7px;font-weight:700}'+
-    '.lbl-real .sello-txt{font-size:6px;color:#ddd;font-weight:700;letter-spacing:0.3px;text-align:center}'+
-    '.lbl-real .noprov{font-size:6px;margin-top:1px}'+
-    // Carta size styles
-    '.lbl-carta{border:3px solid #000;width:180mm;height:80mm;margin-bottom:6mm}'+
-    '.lbl-carta .lbl-logo{width:28px}.lbl-carta .lbl-logo span{font-size:16px;letter-spacing:3px}'+
-    '.lbl-carta .lbl-addr>div{padding:4px 6px}'+
-    '.lbl-carta .h1{font-weight:800;font-size:13px}.lbl-carta .h2{font-weight:700;font-size:12px}'+
-    '.lbl-carta .sm{font-size:10px;color:#333}.lbl-carta .xs{font-size:9.5px;color:#333}'+
-    '.lbl-carta .lbl-part{padding:5px 8px}.lbl-carta .part-id{font-size:22px;font-weight:900;letter-spacing:1px}'+
-    '.lbl-carta .part-lbl{font-size:12px;font-weight:700}.lbl-carta .part-desc{font-size:13px}'+
-    '.lbl-carta .lbl-orders>div{padding:4px 8px}.lbl-carta .ord-lbl{font-size:10px;color:#555}.lbl-carta .ord-val{font-size:14px;font-weight:700}'+
-    '.lbl-carta .lbl-qty>div{padding:4px 8px}.lbl-carta .qty-lbl{font-size:10px;color:#555}.lbl-carta .qty-val{font-size:26px;font-weight:900}.lbl-carta .qty-unit{font-size:10px}'+
-    '.lbl-carta .pn-val{font-size:24px;font-weight:900}.lbl-carta .pn-unit{font-size:10px}'+
-    '.lbl-carta .lbl-right{width:140px}.lbl-carta .lbl-qr{padding:4px}.lbl-carta .lbl-qr img{width:90px;height:90px}'+
-    '.lbl-carta .lbl-fecha{padding:3px 6px}.lbl-carta .fecha-lbl{font-size:9px;color:#555}.lbl-carta .fecha-val{font-size:12px;font-weight:700}'+
-    '.lbl-carta .sello-txt{font-size:10px;color:#ddd;font-weight:700;letter-spacing:0.5px;text-align:center}'+
-    '.lbl-carta .noprov{font-size:10px;margin-top:2px}'+
-    '@media print{body{margin:0;padding:'+(size==="carta"?"10mm":"1mm")+'}}'+
-  '</style></head><body>'+labels+'</body></html>');
-  w.document.close();
-  setTimeout(function(){w.print();},800);
 }
 
 document.addEventListener("click",function(e){if(!e.target.closest(".ac-wrap"))closeDropdowns();});
