@@ -192,7 +192,7 @@ function renderLines(){
     h+='<div class="mb8"><span class="field-label">Item ID</span><div class="ac-wrap" id="ac-'+ln.id+'"><input class="inp" value="'+ln.itemId+'" oninput="updateField('+i+',\'itemId\',this.value);showDropdown('+i+')" onfocus="showDropdown('+i+')" placeholder="Buscar Item ID"></div></div>';
     h+='<div class="mb8"><span class="field-label">Descripcion</span><input class="inp" value="'+ln.descripcion+'" oninput="updateField('+i+',\'descripcion\',this.value)"></div>';
     h+='<div class="grid2"><div><span class="field-label">OC (BPO)</span><input class="inp" value="'+ln.bpoLineId+'" oninput="updateField('+i+',\'bpoLineId\',this.value)"></div>';
-    h+='<div><span class="field-label">Ship To</span><input class="inp" value="'+ln.shipTo+'" oninput="updateField('+i+',\'shipTo\',this.value)"></div></div>';
+    h+='<div><span class="field-label">Ship To</span><div class="ac-wrap" id="st-'+ln.id+'"><input class="inp" value="'+ln.shipTo+'" oninput="updateField('+i+',\'shipTo\',this.value);showShipDropdown('+i+')" onfocus="showShipDropdown('+i+')" placeholder="Buscar destino"></div></div></div>';
     h+='<div class="mb8"><span class="field-label">Orden de Trabajo</span><input class="inp" value="'+ln.ordenTrabajo+'" oninput="updateField('+i+',\'ordenTrabajo\',this.value)"></div>';
     h+='<div class="grid2"><div><span class="field-label">Cantidad (pzas)</span><input class="inp" type="number" value="'+ln.cantidad+'" oninput="updateField('+i+',\'cantidad\',this.value)"></div>';
     h+='<div><span class="field-label">Peso Unit. (kg)</span><input class="inp" style="background:#f0f0f0" value="'+ln.pesoUnit+'" oninput="updateField('+i+',\'pesoUnit\',this.value)"></div></div>';
@@ -317,6 +317,33 @@ function renderPreview(){
   /* Show print grid only exists for @media print */
   var pg=document.getElementById("printGrid");
   if(pg) pg.style.display="none";
+}
+
+function showShipDropdown(li){
+  closeDropdowns();
+  var ln=lines[li];
+  var val=(ln.shipTo||"").toLowerCase();
+  var keys=Object.keys(SHIP_TO);
+  var filt=val?keys.filter(function(k){
+    var s=SHIP_TO[k];
+    return k.toLowerCase().indexOf(val)>=0||(s.real||"").toLowerCase().indexOf(val)>=0;
+  }):keys;
+  if(!filt.length)return;
+  var wrap=document.getElementById("st-"+ln.id);if(!wrap)return;
+  var drop=document.createElement("div");drop.className="ac-drop";
+  for(var i=0;i<filt.length;i++){
+    (function(key){
+      var s=SHIP_TO[key];
+      var d=document.createElement("div");d.className="ac-item";
+      d.innerHTML='<b>'+key+'</b><div class="detail">'+s.real+'</div>';
+      d.onclick=function(){
+        ln.shipTo=key;
+        closeDropdowns();renderLines();if(showPrev)renderPreview();
+      };
+      drop.appendChild(d);
+    })(filt[i]);
+  }
+  wrap.appendChild(drop);
 }
 
 document.addEventListener("click",function(e){if(!e.target.closest(".ac-wrap"))closeDropdowns();});
