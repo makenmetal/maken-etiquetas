@@ -60,8 +60,9 @@ h2{font-size:18px;margin-bottom:2px}
 @media print{
   body{background:#fff;padding:0;max-width:none;margin:0}
   .no-print{display:none!important}
-  #printGrid{display:grid!important;grid-template-columns:4in 4in;grid-template-rows:5in 5in;justify-content:center;align-content:center;gap:0;width:8.5in;height:11in;margin:0 auto;padding:0.25in 0.25in}
-  .lbl{border:1.5px solid #000;margin:0}
+  #printGrid{display:grid!important;grid-template-columns:4in 4in;grid-auto-rows:5in;justify-content:center;align-content:start;column-gap:0.5in;row-gap:0in;width:8.5in;margin:0 auto;padding:0.5in 0in 0in 0in}
+  .lbl{border:1.5px solid #000;margin:0;width:4in;height:5in}
+  @page{margin:0;size:letter}
 }
 </style>
 </head>
@@ -277,12 +278,12 @@ function makeLabel(ln){
 
     /* Footer: Sello Calidad | QR + Logo */
     '<div class="lbl-footer">'+
-      '<div style="flex:1;display:flex;align-items:center;justify-content:center;border-right:1.5px solid #000">'+
+      '<div style="flex:2;display:flex;align-items:center;justify-content:center;border-right:1.5px solid #000">'+
         '<div style="font-size:11px;color:#ccc;text-align:center;font-weight:700;letter-spacing:0.5px">ACEPTADO<br>CALIDAD</div>'+
       '</div>'+
-      '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 10px;gap:4px">'+
-        '<img src="'+qrUrl+'" width="65" height="65" alt="QR">'+
-        '<div style="background:#000;color:#fff;font-weight:900;font-size:12px;padding:3px 10px;letter-spacing:3px;border-radius:2px;line-height:1">MKM</div>'+
+      '<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:5px 8px;gap:5px">'+
+        '<img src="'+qrUrl+'" width="90" height="90" alt="QR">'+
+        '<div style="background:#000;color:#fff;font-weight:900;font-size:16px;padding:4px 14px;letter-spacing:4px;border-radius:3px;line-height:1">MKM</div>'+
       '</div>'+
     '</div>'+
   '</div>';
