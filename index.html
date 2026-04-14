@@ -45,8 +45,8 @@ h2{font-size:18px;margin-bottom:2px}
 .saved-count{background:var(--greenbg);border-radius:6px;padding:8px 12px;text-align:center;margin-bottom:10px;font-size:13px}
 .saved-count b{color:var(--green)}
 .lbl{width:4in;height:5in;border:1.5px solid #000;font-family:Arial,sans-serif;display:flex;flex-direction:column;background:#fff;color:#000;overflow:hidden;page-break-inside:avoid}
-.lbl-logo-bar{border-bottom:2px solid #000;padding:4px 8px;display:flex;align-items:center;justify-content:center}
-.lbl-logo-bar img{height:30px}
+.lbl-logo-bar{border-bottom:2px solid #000;padding:5px 8px;display:flex;align-items:center;justify-content:center}
+.lbl-logo-bar img{height:38px}
 .lbl-header{display:flex;border-bottom:1.5px solid #000}
 .lbl-header-left{flex:1;padding:4px 8px;border-right:1.5px solid #000;line-height:1.25}
 .lbl-header-right{flex:1;padding:4px 8px;line-height:1.25}
@@ -232,7 +232,7 @@ function fetchCatalogo(){
         var hd=Object.keys(results.data[0]).map(function(h){return h.trim();});
         catalogo=results.data.map(function(row){
           var v=hd.map(function(k){return(row[k]||"").toString().trim();});
-          return{bpoLineId:v[0]||"",shipTo:v[1]||"",itemId:v[2]||"",descripcion:v[3]||"",pesoUnit:v[4]||""};
+          return{bpoLineId:v[0]||"",shipTo:v[1]||"",itemId:v[2]||"",descripcion:v[3]||"",pesoUnit:v[4]||"",loteOptimo:v[5]||""};
         }).filter(function(x){return x.itemId;});
         catalogo.sort(function(a,b){return a.itemId.localeCompare(b.itemId);});
         var t=new Date().toLocaleTimeString();
@@ -271,6 +271,7 @@ function showDropdown(li,mode){
       d.onclick=function(){
         ln.itemId=it.itemId;ln.descripcion=it.descripcion;ln.pesoUnit=it.pesoUnit;
         ln.shipTo=it.shipTo;ln.bpoLineId=it.bpoLineId;
+        if(it.loteOptimo)ln.cantidad=it.loteOptimo;
         closeDropdowns();renderLines(mode);if(mode==="prod")saveProdState();
       };
       drop.appendChild(d);
@@ -476,8 +477,8 @@ function printLabels(mode){
   pw.document.write('*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif}');
   pw.document.write('.print-grid{display:grid;grid-template-columns:4in 4in;grid-auto-rows:5in;justify-content:center;align-content:start;column-gap:0.5in;row-gap:0in;width:8.5in;margin:0 auto;padding:0.5in 0in 0in 0in}');
   pw.document.write('.lbl{width:4in;height:5in;border:1.5px solid #000;font-family:Arial,sans-serif;display:flex;flex-direction:column;background:#fff;color:#000;overflow:hidden;page-break-inside:avoid}');
-  pw.document.write('.lbl-logo-bar{border-bottom:2px solid #000;padding:4px 8px;display:flex;align-items:center;justify-content:center}');
-  pw.document.write('.lbl-logo-bar img{height:30px}');
+  pw.document.write('.lbl-logo-bar{border-bottom:2px solid #000;padding:5px 8px;display:flex;align-items:center;justify-content:center}');
+  pw.document.write('.lbl-logo-bar img{height:38px}');
   pw.document.write('.lbl-header{display:flex;border-bottom:1.5px solid #000}.lbl-header-left{flex:1;padding:4px 8px;border-right:1.5px solid #000;line-height:1.25}.lbl-header-right{flex:1;padding:4px 8px;line-height:1.25}');
   pw.document.write('.lbl-big-row{display:flex;border-bottom:2px solid #000}.lbl-big-cell{flex:1;padding:6px 8px;text-align:center;border-right:1.5px solid #000}.lbl-big-cell:last-child{border-right:none}');
   pw.document.write('.lbl-big-label{font-size:9px;color:#555;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px}.lbl-big-val{font-weight:900;line-height:1.1}');
