@@ -159,7 +159,7 @@ h3{font-size:16px;margin-bottom:8px}
 
 <!-- ========== EMBARQUE SESION ========== -->
 <div class="page" id="pageEmbSession">
-  <button class="back-btn" onclick="stopScanner();goPage('pageEmbarques')">← Sesiones</button>
+  <button class="back-btn" onclick="backToSessions()">← Sesiones</button>
   <h3 id="embSessionTitle">Sesión 1</h3>
   <div id="embClientInfo" style="display:none" class="mb12"></div>
 
@@ -211,8 +211,8 @@ h3{font-size:16px;margin-bottom:8px}
     </div>
     <div id="embLines"></div>
     <div id="embSummary" style="display:none" class="saved-count mb12"></div>
-    <button class="btn-blue" id="btnDownloadCSV" style="display:none" onclick="downloadCSV()">Descargar CSV para ERP</button>
-    <button class="btn-orange" id="btnCloseEmb" style="display:none" onclick="closeEmbSession()">Cerrar y limpiar sesión</button>
+    <button class="btn-blue" id="btnDownloadCSV" style="display:none" onclick="downloadCSV()">Descargar CSV local</button>
+    <button class="btn-green" id="btnCloseEmb" style="display:none" onclick="closeEmbSession()">📤 Generar reporte y subir a Drive</button>
     <button class="btn" id="btnChangeClient" style="display:none;width:100%;margin-bottom:10px;color:#c00;border-color:#c00" onclick="changeEmbClient()">Cambiar cliente</button>
   </div>
 </div>
@@ -600,13 +600,59 @@ function downloadCSV(){
   URL.revokeObjectURL(url);
 }
 
+function backToSessions(){
+  try{stopScanner();}catch(e){}
+  setTimeout(function(){goPage("pageEmbarques");},100);
+}
+
+var APPS_SCRIPT_URL="https://script.google.com/macros/s/AKfycbxMDwcAsPmNhlF1nHzRhtc1AsJIhdeuvosT0GqetqPkZ98FIl1Fb7CaNWPCFAZkWq0c/exec";
+
 function closeEmbSession(){
-  if(!confirm("¿Cerrar y limpiar esta sesión?"))return;
-  stopScanner();
-  embSessions[activeEmbSession]=null;
-  saveEmbSessions();
-  goPage("pageEmbarques");
-  renderEmbSessions();
+  var s=embSessions[activeEmbSession];
+  if(!s)return;
+  if(s.lines&&s.lines.length>0){
+    if(!confirm("¿Generar reporte y cerrar sesión?"))return;
+    stopScanner();
+    uploadToDrive(s);
+  }else{
+    if(!confirm("¿Cerrar esta sesión?"))return;
+    stopScanner();
+    embSessions[activeEmbSession]=null;
+    saveEmbSessions();
+    goPage("pageEmbarques");
+  }
+}
+
+function uploadToDrive(s){
+  document.getElementById("btnCloseEmb").disabled=true;
+  document.getElementById("btnCloseEmb").textContent="Subiendo al Drive...";
+
+  var payload=JSON.stringify({client:s.client,lines:s.lines});
+
+  fetch(APPS_SCRIPT_URL,{
+    method:"POST",
+    body:payload
+  })
+  .then(function(r){return r.json();})
+  .then(function(data){
+    if(data.success){
+      alert("✅ Reporte generado:\n"+data.name+"\n\nGuardado en Drive. Puedes abrirlo desde cualquier equipo.");
+      embSessions[activeEmbSession]=null;
+      saveEmbSessions();
+      goPage("pageEmbarques");
+    }else{
+      alert("❌ Error al subir: "+data.error+"\n\nSe descargará CSV local como respaldo.");
+      downloadCSV();
+      document.getElementById("btnCloseEmb").disabled=false;
+      document.getElementById("btnCloseEmb").textContent="Cerrar y limpiar sesión";
+    }
+  })
+  .catch(function(err){
+    alert("❌ Error de conexión: "+err+"\n\nSe descargará CSV local como respaldo.");
+    downloadCSV();
+    document.getElementById("btnCloseEmb").disabled=false;
+    document.getElementById("btnCloseEmb").textContent="Cerrar y limpiar sesión";
+  });
 }
 
 // ========== INIT ==========
