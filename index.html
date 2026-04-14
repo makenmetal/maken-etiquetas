@@ -159,7 +159,7 @@ h3{font-size:16px;margin-bottom:8px}
 
 <!-- ========== EMBARQUE SESION ========== -->
 <div class="page" id="pageEmbSession">
-  <button class="back-btn" onclick="stopScanner();goPage('pageEmbarques');renderEmbSessions()">← Sesiones</button>
+  <button class="back-btn" onclick="stopScanner();goPage('pageEmbarques')">← Sesiones</button>
   <h3 id="embSessionTitle">Sesión 1</h3>
   <div id="embClientInfo" style="display:none" class="mb12"></div>
 
@@ -181,6 +181,33 @@ h3{font-size:16px;margin-bottom:8px}
         <input class="inp" id="manualQR" placeholder="Pegar contenido del QR" style="flex:1">
         <button class="btn" onclick="processManualQR()" style="white-space:nowrap">Agregar</button>
       </div>
+    </div>
+    <div class="mb8">
+      <button class="btn" onclick="toggleManualEntry()" id="btnManualEntry" style="width:100%;border-color:var(--orange);color:var(--orange)">✏ QR dañado — Captura manual</button>
+    </div>
+    <div id="manualEntryForm" style="display:none" class="card mb8">
+      <div style="font-weight:700;font-size:14px;margin-bottom:10px;color:var(--orange)">Captura manual</div>
+      <div class="mb8">
+        <span class="field-label">Item ID</span>
+        <div class="ac-wrap" id="ac-emb-manual">
+          <input class="inp" id="manItemId" placeholder="Buscar Item ID" oninput="showManualItemDrop()" onfocus="showManualItemDrop()">
+        </div>
+      </div>
+      <div class="mb8">
+        <span class="field-label">Orden de Trabajo</span>
+        <input class="inp" id="manOT" placeholder="Orden de trabajo">
+      </div>
+      <div class="grid2">
+        <div>
+          <span class="field-label">Cantidad</span>
+          <input class="inp" id="manQty" type="number" placeholder="Piezas">
+        </div>
+        <div>
+          <span class="field-label">OC (BPO)</span>
+          <input class="inp" id="manOC" placeholder="Orden de compra" style="background:#f0f0f0">
+        </div>
+      </div>
+      <button class="btn-green" onclick="addManualEntry()" style="margin-top:10px">Agregar al embarque</button>
     </div>
     <div id="embLines"></div>
     <div id="embSummary" style="display:none" class="saved-count mb12"></div>
@@ -216,6 +243,7 @@ function goPage(id){
   for(var i=0;i<pages.length;i++)pages[i].classList.remove("active");
   document.getElementById(id).classList.add("active");
   if(id==="pageEmbarques")renderEmbSessions();
+  window.scrollTo(0,0);
 }
 
 // ========== FETCH ==========
@@ -396,6 +424,79 @@ function processManualQR(){
   if(!val){alert("Pega el contenido del QR");return;}
   processQRData(val);
   document.getElementById("manualQR").value="";
+}
+
+function toggleManualEntry(){
+  var form=document.getElementById("manualEntryForm");
+  if(form.style.display==="none"){
+    form.style.display="block";
+    document.getElementById("btnManualEntry").textContent="✕ Cerrar captura manual";
+  }else{
+    form.style.display="none";
+    document.getElementById("btnManualEntry").textContent="✏ QR dañado — Captura manual";
+  }
+}
+
+function showManualItemDrop(){
+  closeDropdowns();
+  var val=(document.getElementById("manItemId").value||"").toLowerCase();
+  var s=embSessions[activeEmbSession];
+  if(!s)return;
+  var clientFilter=s.client;
+  var filt=catalogo.filter(function(c){
+    var matchClient=c.shipTo===clientFilter;
+    if(!val)return matchClient;
+    return matchClient&&((c.itemId||"").toLowerCase().indexOf(val)>=0||(c.descripcion||"").toLowerCase().indexOf(val)>=0);
+  });
+  if(!filt.length)return;
+  var wrap=document.getElementById("ac-emb-manual");
+  var drop=document.createElement("div");drop.className="ac-drop";
+  for(var i=0;i<filt.length;i++){
+    (function(idx){
+      var it=filt[idx];var d=document.createElement("div");d.className="ac-item";
+      d.innerHTML='<b>'+it.itemId+'</b> — '+it.descripcion+'<div class="detail">BPO: '+it.bpoLineId+'</div>';
+      d.onclick=function(){
+        document.getElementById("manItemId").value=it.itemId;
+        document.getElementById("manOC").value=it.bpoLineId;
+        if(it.loteOptimo)document.getElementById("manQty").value=it.loteOptimo;
+        closeDropdowns();
+      };
+      drop.appendChild(d);
+    })(i);
+  }
+  wrap.appendChild(drop);
+}
+
+function addManualEntry(){
+  var itemId=document.getElementById("manItemId").value.trim();
+  var ot=document.getElementById("manOT").value.trim();
+  var qty=document.getElementById("manQty").value.trim();
+  var oc=document.getElementById("manOC").value.trim();
+  if(!itemId){alert("Selecciona un Item ID");return;}
+  if(!qty){alert("Captura la cantidad");return;}
+
+  var s=embSessions[activeEmbSession];
+  if(!s)return;
+
+  var found=false;
+  for(var j=0;j<s.lines.length;j++){
+    if(s.lines[j].itemId===itemId&&s.lines[j].ot===ot){
+      s.lines[j].qty=parseInt(s.lines[j].qty)+parseInt(qty);
+      found=true;
+      break;
+    }
+  }
+  if(!found){
+    s.lines.push({itemId:itemId,oc:oc,ot:ot,qty:parseInt(qty)||0,shipTo:s.client});
+  }
+  saveEmbSessions();
+  renderEmbLines();
+
+  document.getElementById("manItemId").value="";
+  document.getElementById("manOT").value="";
+  document.getElementById("manQty").value="";
+  document.getElementById("manOC").value="";
+  toggleManualEntry();
 }
 
 function processQRData(raw){
