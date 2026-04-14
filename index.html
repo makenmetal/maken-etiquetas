@@ -588,7 +588,7 @@ function downloadCSV(){
   var csv="Codigo,Cantidad,Precio,Comentarios,Producto o servicio,Lotes (Separados x coma)\n";
   for(var i=0;i<s.lines.length;i++){
     var ln=s.lines[i];
-    csv+=ln.itemId+","+ln.qty+",,,"+ln.ot+",\n";
+    csv+=ln.itemId+","+ln.qty+",,,OC: "+ln.oc+" / OT: "+ln.ot+",\n";
   }
   var blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
   var url=URL.createObjectURL(blob);
