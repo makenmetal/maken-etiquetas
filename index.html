@@ -337,6 +337,8 @@ function showEmbClientDrop(){
 
 var qrScanner=null;
 var scannerRunning=false;
+var scanPaused=false;
+var SCAN_PAUSE_MS=3000;
 
 function toggleScanner(){
   if(scannerRunning){
@@ -350,14 +352,23 @@ function startScanner(){
   document.getElementById("qrReader").style.display="block";
   document.getElementById("btnScanToggle").textContent="⏹ Cerrar cámara";
   document.getElementById("btnScanToggle").style.background="#c00";
+  scanPaused=false;
   qrScanner=new Html5Qrcode("qrReader");
   qrScanner.start(
     {facingMode:"environment"},
     {fps:10,qrbox:{width:250,height:250}},
     function(decoded){
+      if(scanPaused)return;
+      scanPaused=true;
       processQRData(decoded);
-      // Beep feedback
       try{var ac=new(window.AudioContext||window.webkitAudioContext)();var o=ac.createOscillator();o.type="sine";o.frequency.value=800;o.connect(ac.destination);o.start();setTimeout(function(){o.stop();},150);}catch(e){}
+      document.getElementById("btnScanToggle").textContent="⏳ Espera...";
+      setTimeout(function(){
+        scanPaused=false;
+        if(scannerRunning){
+          document.getElementById("btnScanToggle").textContent="⏹ Cerrar cámara";
+        }
+      },SCAN_PAUSE_MS);
     },
     function(){}
   ).catch(function(err){
