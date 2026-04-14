@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>MKM - MAKEN METAL</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <style>
 :root{--bg:#f7f7f7;--card:#fff;--border:#ddd;--text:#1a1a1a;--muted:#888;--green:#1a6b3c;--greenbg:#e8f5e9;--orange:#e65100;--orangebg:#fff3e0;--blue:#1565c0;--bluebg:#e3f2fd}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -158,7 +159,7 @@ h3{font-size:16px;margin-bottom:8px}
 
 <!-- ========== EMBARQUE SESION ========== -->
 <div class="page" id="pageEmbSession">
-  <button class="back-btn" onclick="goPage('pageEmbarques');renderEmbSessions()">← Sesiones</button>
+  <button class="back-btn" onclick="stopScanner();goPage('pageEmbarques');renderEmbSessions()">← Sesiones</button>
   <h3 id="embSessionTitle">Sesión 1</h3>
   <div id="embClientInfo" style="display:none" class="mb12"></div>
 
@@ -170,9 +171,16 @@ h3{font-size:16px;margin-bottom:8px}
   </div>
 
   <div id="embContent" style="display:none">
-    <div class="scan-area" id="scanArea" onclick="document.getElementById('scanInput').focus()">
-      <p>📷 Toca para escanear QR</p>
-      <input id="scanInput" style="opacity:0;position:absolute;left:-9999px" onfocus="document.getElementById('scanArea').style.borderColor='var(--green)'" onblur="document.getElementById('scanArea').style.borderColor='var(--blue)'" onkeydown="handleScan(event)">
+    <div class="mb8">
+      <button class="btn-blue" id="btnScanToggle" onclick="toggleScanner()" style="margin-bottom:8px">📷 Abrir cámara para escanear</button>
+      <div id="qrReader" style="display:none;margin-bottom:10px;border-radius:10px;overflow:hidden"></div>
+    </div>
+    <div class="mb8">
+      <span class="field-label">O pegar QR manualmente</span>
+      <div style="display:flex;gap:6px">
+        <input class="inp" id="manualQR" placeholder="Pegar contenido del QR" style="flex:1">
+        <button class="btn" onclick="processManualQR()" style="white-space:nowrap">Agregar</button>
+      </div>
     </div>
     <div id="embLines"></div>
     <div id="embSummary" style="display:none" class="saved-count mb12"></div>
@@ -327,38 +335,78 @@ function showEmbClientDrop(){
   wrap.appendChild(drop);
 }
 
-function handleScan(e){
-  if(e.key!=="Enter")return;
-  var raw=e.target.value.trim();
-  e.target.value="";
+var qrScanner=null;
+var scannerRunning=false;
+
+function toggleScanner(){
+  if(scannerRunning){
+    stopScanner();
+  }else{
+    startScanner();
+  }
+}
+
+function startScanner(){
+  document.getElementById("qrReader").style.display="block";
+  document.getElementById("btnScanToggle").textContent="⏹ Cerrar cámara";
+  document.getElementById("btnScanToggle").style.background="#c00";
+  qrScanner=new Html5Qrcode("qrReader");
+  qrScanner.start(
+    {facingMode:"environment"},
+    {fps:10,qrbox:{width:250,height:250}},
+    function(decoded){
+      processQRData(decoded);
+      // Beep feedback
+      try{var ac=new(window.AudioContext||window.webkitAudioContext)();var o=ac.createOscillator();o.type="sine";o.frequency.value=800;o.connect(ac.destination);o.start();setTimeout(function(){o.stop();},150);}catch(e){}
+    },
+    function(){}
+  ).catch(function(err){
+    alert("No se pudo acceder a la cámara: "+err);
+    stopScanner();
+  });
+  scannerRunning=true;
+}
+
+function stopScanner(){
+  if(qrScanner){
+    qrScanner.stop().then(function(){
+      qrScanner.clear();
+    }).catch(function(){});
+  }
+  document.getElementById("qrReader").style.display="none";
+  document.getElementById("btnScanToggle").textContent="📷 Abrir cámara para escanear";
+  document.getElementById("btnScanToggle").style.background="var(--blue)";
+  scannerRunning=false;
+}
+
+function processManualQR(){
+  var val=document.getElementById("manualQR").value.trim();
+  if(!val){alert("Pega el contenido del QR");return;}
+  processQRData(val);
+  document.getElementById("manualQR").value="";
+}
+
+function processQRData(raw){
   if(!raw)return;
-  // Parse QR: MKM|itemId|OC:bpo|OT:ot|shipTo|Q:qty|KG:kg|fecha
   var parts=raw.split("|");
-  if(parts.length<6||parts[0]!=="MKM"){alert("QR no válido");return;}
+  if(parts.length<6||parts[0]!=="MKM"){alert("QR no válido: "+raw);return;}
   var itemId=parts[1]||"";
   var oc="",ot="",ship="",qty="";
   for(var i=2;i<parts.length;i++){
     if(parts[i].indexOf("OC:")===0)oc=parts[i].substring(3);
     else if(parts[i].indexOf("OT:")===0)ot=parts[i].substring(3);
     else if(parts[i].indexOf("Q:")===0)qty=parts[i].substring(2);
-    else if(parts[i].indexOf("KG:")!==0&&parts[i].indexOf("MKM")!==0&&parts[i].length>0&&parts[i].indexOf("-")<0&&parts[i].indexOf("20")<0){
-      // Likely shipTo
-      if(!ship)ship=parts[i];
-    }
   }
-  // Get shipTo from position if not found
   if(!ship&&parts.length>=5)ship=parts[4];
 
   var s=embSessions[activeEmbSession];
   if(!s)return;
 
-  // Validate client
   if(ship!==s.client){
-    alert("Esta etiqueta es de "+ship+", la sesión es para "+s.client+". No se puede agregar.");
+    alert("⚠ Esta etiqueta es de "+ship+"\nLa sesión es para "+s.client+"\nNo se puede agregar.");
     return;
   }
 
-  // Check if same itemId + OT exists → sum qty
   var found=false;
   for(var j=0;j<s.lines.length;j++){
     if(s.lines[j].itemId===itemId&&s.lines[j].ot===ot){
@@ -431,6 +479,7 @@ function downloadCSV(){
 
 function closeEmbSession(){
   if(!confirm("¿Cerrar y limpiar esta sesión?"))return;
+  stopScanner();
   embSessions[activeEmbSession]=null;
   saveEmbSessions();
   goPage("pageEmbarques");
