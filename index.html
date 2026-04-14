@@ -186,6 +186,7 @@ h3{font-size:16px;margin-bottom:8px}
     <div id="embSummary" style="display:none" class="saved-count mb12"></div>
     <button class="btn-blue" id="btnDownloadCSV" style="display:none" onclick="downloadCSV()">Descargar CSV para ERP</button>
     <button class="btn-orange" id="btnCloseEmb" style="display:none" onclick="closeEmbSession()">Cerrar y limpiar sesión</button>
+    <button class="btn" id="btnChangeClient" style="display:none;width:100%;margin-bottom:10px;color:#c00;border-color:#c00" onclick="changeEmbClient()">Cambiar cliente</button>
   </div>
 </div>
 
@@ -445,12 +446,14 @@ function renderEmbLines(){
   var sum=document.getElementById("embSummary");
   var btnCSV=document.getElementById("btnDownloadCSV");
   var btnClose=document.getElementById("btnCloseEmb");
+  var btnChange=document.getElementById("btnChangeClient");
 
   if(s.lines.length===0){
     el.innerHTML='<p style="color:#888;font-size:13px;text-align:center;padding:14px">Escanea etiquetas QR para agregar líneas</p>';
     sum.style.display="none";
     btnCSV.style.display="none";
     btnClose.style.display="none";
+    btnChange.style.display="block";
     return;
   }
   var h="";
@@ -458,7 +461,6 @@ function renderEmbLines(){
   for(var i=0;i<s.lines.length;i++){
     var ln=s.lines[i];
     totalPcs+=ln.qty;
-    // Find description from catalog
     var desc="";
     for(var j=0;j<catalogo.length;j++){if(catalogo[j].itemId===ln.itemId){desc=catalogo[j].descripcion;break;}}
     h+='<div class="emb-line"><div class="info"><b>'+ln.itemId+'</b>'+(desc?' — '+desc:'')+'<div class="det">OT: '+ln.ot+' | OC: '+ln.oc+'</div></div><div class="qty">'+ln.qty+'</div><button onclick="removeEmbLine('+i+')" style="background:none;border:none;color:#c00;cursor:pointer;font-size:16px;margin-left:8px">✕</button></div>';
@@ -468,6 +470,15 @@ function renderEmbLines(){
   sum.style.display="block";
   btnCSV.style.display="block";
   btnClose.style.display="block";
+  btnChange.style.display="none";
+}
+
+function changeEmbClient(){
+  if(!confirm("¿Cambiar cliente de esta sesión?"))return;
+  stopScanner();
+  embSessions[activeEmbSession]=null;
+  saveEmbSessions();
+  openEmbSession(activeEmbSession);
 }
 
 function downloadCSV(){
