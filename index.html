@@ -111,7 +111,8 @@ var lines = [];
 var showPrev = false;
 var lineId = 0;
 
-function mkLine(){lineId++;return{id:lineId,bpoLineId:"",shipTo:"",itemId:"",descripcion:"",ordenTrabajo:"",cantidad:"",pesoUnit:"",copias:"1"};}function calcPN(pu,c){var a=parseFloat(pu),b=parseFloat(c);return(isNaN(a)||isNaN(b)||b===0)?"":(a*b).toFixed(2);}
+function mkLine(){lineId++;return{id:lineId,bpoLineId:"",shipTo:"",itemId:"",descripcion:"",ordenTrabajo:"",cantidad:"",pesoUnit:"",copias:"1",catShipTo:"",catBpo:""};}
+function calcPN(pu,c){var a=parseFloat(pu),b=parseFloat(c);return(isNaN(a)||isNaN(b)||b===0)?"":(a*b).toFixed(2);}
 
 document.getElementById("fecha").value=new Date().toISOString().split("T")[0];
 lines.push(mkLine());
@@ -161,7 +162,16 @@ function showDropdown(li){
       var it=filt[idx];var d=document.createElement("div");d.className="ac-item";
       d.innerHTML='<b>'+it.itemId+'</b> — '+it.descripcion+'<div class="detail">'+( it.pesoUnit||"?")+ ' kg/pza | '+it.shipTo+' | BPO: '+it.bpoLineId+'</div>';
       d.onclick=function(){
-        ln.itemId=it.itemId;ln.descripcion=it.descripcion;ln.pesoUnit=it.pesoUnit;ln.bpoLineId=it.bpoLineId;ln.shipTo=it.shipTo;
+        ln.itemId=it.itemId;ln.descripcion=it.descripcion;ln.pesoUnit=it.pesoUnit;
+        ln.catShipTo=it.shipTo;ln.catBpo=it.bpoLineId;
+        ln.shipTo=it.shipTo;
+        if(it.shipTo===ln.shipTo||!ln.shipTo){
+          ln.bpoLineId=it.bpoLineId;
+        } else {
+          ln.bpoLineId="";
+        }
+        ln.shipTo=it.shipTo;
+        ln.bpoLineId=it.bpoLineId;
         closeDropdowns();renderLines();if(showPrev)renderPreview();
       };
       drop.appendChild(d);
@@ -170,8 +180,24 @@ function showDropdown(li){
   wrap.appendChild(drop);
 }
 
+function findBpoForItemAndShip(itemId, shipTo) {
+  if (!itemId || !shipTo || !catalogo.length) return "";
+  for (var i = 0; i < catalogo.length; i++) {
+    if (catalogo[i].itemId === itemId && catalogo[i].shipTo === shipTo) {
+      return catalogo[i].bpoLineId;
+    }
+  }
+  return "";
+}
+
 function updateField(li,field,val){
   lines[li][field]=val;
+  if(field==="shipTo"){
+    var ln=lines[li];
+    var found = findBpoForItemAndShip(ln.itemId, val);
+    ln.bpoLineId = found;
+    renderLines();
+  }
   if(field==="cantidad"||field==="pesoUnit"){
     var pn=calcPN(lines[li].pesoUnit,lines[li].cantidad);
     var el=document.getElementById("pn-"+lines[li].id);
@@ -338,6 +364,7 @@ function showShipDropdown(li){
       d.innerHTML='<b>'+key+'</b><div class="detail">'+s.real+'</div>';
       d.onclick=function(){
         ln.shipTo=key;
+        ln.bpoLineId=findBpoForItemAndShip(ln.itemId, key);
         closeDropdowns();renderLines();if(showPrev)renderPreview();
       };
       drop.appendChild(d);
