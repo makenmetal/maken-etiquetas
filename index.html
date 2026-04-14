@@ -82,15 +82,9 @@ h2{font-size:18px;margin-bottom:2px}
 <div id="previewArea" style="display:none"></div>
 <script>
 var SHEET_URL="https://docs.google.com/spreadsheets/d/e/2PACX-1vQ1JtoJW5D7HZ3pXd4VTGb7Ii5LLWd7LTYMjpl5hP_RYOEN2U5O41gnqSrCGeRKqA/pub?output=csv";
+var SHEET_SHIPTO_URL="https://docs.google.com/spreadsheets/d/e/2PACX-1vQ1JtoJW5D7HZ3pXd4VTGb7Ii5LLWd7LTYMjpl5hP_RYOEN2U5O41gnqSrCGeRKqA/pub?gid=1896208322&single=true&output=csv";
 var LOGO_URL="https://makenmetal.github.io/maken-etiquetas/LOGO-MKM.jpg";
-var SHIP_TO={
-  CATO:{real:"CATERPILLAR TORREÓN, S. DE RL DE C.V.",dir:"Carr. Torreón Mieleras Km 6.5, P.I. Ferropuerto Laguna, Torreón, Coah. CP 27400",noProv:"B9390X0"},
-  CMSA:{real:"CATERPILLAR MÉXICO S.A. DE C.V.",dir:"Carr. a Villa García Km 4.5, CP 66350, Sta. Catarina, N.L.",noProv:"B9390X0"},
-  NAOSF:{real:"CATERPILLAR INDUSTRIAS MÉXICO S DE RL DE CV",dir:"Carr. Fed. a Villa de García Km 4.5 S/N, CP 66350, Sta. Catarina, N.L.",noProv:"B9390X0"},
-  MONTERRE:{real:"CATERPILLAR INDUSTRIAS MÉXICO S DE RL DE CV",dir:"Carr. Fed. a Villa de García Km 4.5 S/N, CP 66350, Sta. Catarina, N.L.",noProv:"B9390X0"},
-  "Collado Mat":{real:"GRUPO COLLADO, S.A. DE C.V.",dir:"Prol. Av. Uniones, P.I. del Nte., CP 87316, H. Matamoros, Tamps.",noProv:""},
-  "Collado Mty":{real:"GRUPO COLLADO, S.A. DE C.V.",dir:"Otomí No. 200, Col. Ex Hda. Sto. Domingo, CP 66490, San Nicolás de los Garza, N.L.",noProv:""}
-};
+var SHIP_TO={};
 var catalogo=[];
 var lines=[];
 var showPrev=false;
@@ -105,10 +99,31 @@ lines.push(mkLine());
 function fetchCatalogo(){
   document.getElementById("syncStatus").innerHTML='<span style="color:#666">● Cargando...</span>';
   document.getElementById("btnSync").disabled=true;
+  var done=0;
+  function checkDone(){done++;if(done>=2){document.getElementById("btnSync").disabled=false;}}
+
+  Papa.parse(SHEET_SHIPTO_URL,{
+    download:true,header:true,skipEmptyLines:true,dynamicTyping:false,
+    complete:function(results){
+      if(results.data&&results.data.length>0){
+        var hd=Object.keys(results.data[0]).map(function(h){return h.trim();});
+        SHIP_TO={};
+        results.data.forEach(function(row){
+          var v=hd.map(function(k){return(row[k]||"").toString().trim();});
+          var code=v[0]||"";
+          if(code){
+            SHIP_TO[code]={real:v[1]||"",dir:v[2]||"",noProv:v[3]||""};
+          }
+        });
+      }
+      checkDone();
+    },
+    error:function(){checkDone();}
+  });
+
   Papa.parse(SHEET_URL,{
     download:true,header:true,skipEmptyLines:true,dynamicTyping:false,
     complete:function(results){
-      document.getElementById("btnSync").disabled=false;
       if(results.data&&results.data.length>0){
         var hd=Object.keys(results.data[0]).map(function(h){return h.trim();});
         catalogo=results.data.map(function(row){
@@ -117,14 +132,15 @@ function fetchCatalogo(){
         }).filter(function(x){return x.itemId;});
         catalogo.sort(function(a,b){return a.itemId.localeCompare(b.itemId);});
         var t=new Date().toLocaleTimeString();
-        document.getElementById("syncStatus").innerHTML='<span style="color:#1a6b3c">● Sheet — '+catalogo.length+' productos ('+t+')</span>';
+        document.getElementById("syncStatus").innerHTML='<span style="color:#1a6b3c">● Sheet — '+catalogo.length+' productos | '+Object.keys(SHIP_TO).length+' destinos ('+t+')</span>';
       }else{
         document.getElementById("syncStatus").innerHTML='<span style="color:#c00">● Sin datos</span>';
       }
+      checkDone();
     },
     error:function(){
-      document.getElementById("btnSync").disabled=false;
       document.getElementById("syncStatus").innerHTML='<span style="color:#c00">● Error de conexion</span>';
+      checkDone();
     }
   });
 }
