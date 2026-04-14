@@ -16,7 +16,7 @@ h2{font-size:18px;margin-bottom:2px}
 .btn:active{opacity:0.7}
 .btn-sync{background:var(--greenbg)}
 .btn-dark{background:#222;color:#fff;border:none}
-.btn-green{background:var(--green);color:#fff;border:none;width:100%;padding:12px;font-size:15px;font-weight:700;border-radius:8px;margin-bottom:16px}
+.btn-green{background:var(--green);color:#fff;border:none;width:100%;padding:12px;font-size:15px;font-weight:700;border-radius:8px;margin-bottom:16px;cursor:pointer}
 .status{font-size:12px;font-weight:600}
 .field-label{font-size:11px;font-weight:600;color:var(--muted);margin-bottom:2px;display:block}
 .inp{width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:14px}
@@ -196,7 +196,16 @@ function updateField(li,field,val){
     var ln=lines[li];
     var found = findBpoForItemAndShip(ln.itemId, val);
     ln.bpoLineId = found;
-    renderLines();
+    /* Update BPO display without full re-render to keep focus */
+    var bpoInput=document.querySelector('#ac-'+ln.id);
+    if(bpoInput){
+      var card=bpoInput.closest('.card');
+      if(card){
+        var inputs=card.querySelectorAll('input');
+        /* BPO is the 3rd input (after itemId, descripcion) */
+        if(inputs.length>=3) inputs[2].value=found;
+      }
+    }
   }
   if(field==="cantidad"||field==="pesoUnit"){
     var pn=calcPN(lines[li].pesoUnit,lines[li].cantidad);
