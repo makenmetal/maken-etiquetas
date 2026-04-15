@@ -220,7 +220,7 @@ function changeEmbClient(){if(!confirm("¿Cambiar cliente de esta sesión?"))ret
 function downloadCSV(){var s=embSessions[activeEmbSession];if(!s||!s.lines||!s.lines.length)return;var csv="Codigo,Cantidad,Precio,Comentarios,Producto o servicio,Lotes (Separados x coma)\n";for(var i=0;i<s.lines.length;i++){var ln=s.lines[i];csv+=ln.itemId+","+ln.qty+",,,OC: "+ln.oc+" / OT: "+ln.ot+",\n";}var blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});var url=URL.createObjectURL(blob);var a=document.createElement("a");var today=new Date().toISOString().split("T")[0];a.href=url;a.download="pedido_"+s.client+"_"+(activeEmbSession+1)+"_"+today+".csv";a.click();URL.revokeObjectURL(url);}
 
 // CLOSE SESSION WITH OPTIONS
-function showCloseOptions(){document.getElementById("closeOptions").style.display="block";}
+function showCloseOptions(){setTimeout(function(){document.getElementById("closeOptions").style.display="block";},50);}
 
 function doCloseSession(type){
   document.getElementById("closeOptions").style.display="none";
