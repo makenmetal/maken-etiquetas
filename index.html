@@ -213,7 +213,13 @@ h3{font-size:16px;margin-bottom:8px}
     <div id="embLines"></div>
     <div id="embSummary" style="display:none" class="saved-count mb12"></div>
     <button class="btn-blue" id="btnDownloadCSV" style="display:none" onclick="downloadCSV()">Descargar CSV local</button>
-    <button class="btn-green" id="btnCloseEmb" style="display:none" onclick="closeEmbSession()">📤 Generar reporte y subir a Drive</button>
+    <button class="btn-green" id="btnCloseEmb" style="display:none" onclick="showCloseOptions()">📤 Generar reporte y subir a Drive</button>
+    <div id="closeOptions" style="display:none" class="card mb8">
+      <div style="font-weight:700;font-size:14px;margin-bottom:10px">¿Qué reportes generar?</div>
+      <button class="btn-green" onclick="doCloseSession('pedido')" style="margin-bottom:6px">Solo Pedido</button>
+      <button class="btn-blue" onclick="doCloseSession('ambos')" style="width:100%;padding:12px;font-size:15px;font-weight:700;border-radius:8px;margin-bottom:6px;cursor:pointer">Pedido + ASN</button>
+      <button class="btn" onclick="document.getElementById('closeOptions').style.display='none'" style="width:100%">Cancelar</button>
+    </div>
     <button class="btn" id="btnChangeClient" style="display:none;width:100%;margin-bottom:10px;color:#c00;border-color:#c00" onclick="changeEmbClient()">Cambiar cliente</button>
   </div>
 </div>
@@ -615,13 +621,69 @@ function backToSessions(){
 
 var APPS_SCRIPT_URL="https://script.google.com/macros/s/AKfycbxMDwcAsPmNhlF1nHzRhtc1AsJIhdeuvosT0GqetqPkZ98FIl1Fb7CaNWPCFAZkWq0c/exec";
 
+function showCloseOptions(){
+  document.getElementById("closeOptions").style.display="block";
+}
+
+function doCloseSession(type){
+  document.getElementById("closeOptions").style.display="none";
+  var s=embSessions[activeEmbSession];
+  if(!s||!s.lines||!s.lines.length)return;
+  stopScanner();
+
+  document.getElementById("btnCloseEmb").disabled=true;
+  document.getElementById("btnCloseEmb").textContent="Subiendo al Drive...";
+
+  // Enriquecer lines con descripcion y peso para ASN
+  var enrichedLines=[];
+  for(var i=0;i<s.lines.length;i++){
+    var ln=s.lines[i];
+    var desc="";
+    var pesoUnit="0";
+    for(var j=0;j<catalogo.length;j++){
+      if(catalogo[j].itemId===ln.itemId){
+        desc=catalogo[j].descripcion;
+        pesoUnit=catalogo[j].pesoUnit;
+        break;
+      }
+    }
+    enrichedLines.push({itemId:ln.itemId,oc:ln.oc,ot:ln.ot,qty:ln.qty,shipTo:ln.shipTo,desc:desc,pesoUnit:pesoUnit});
+  }
+
+  var payload=JSON.stringify({type:type,client:s.client,lines:enrichedLines,asnLines:enrichedLines});
+
+  fetch(APPS_SCRIPT_URL,{method:"POST",body:payload})
+  .then(function(r){return r.json();})
+  .then(function(data){
+    if(data.success){
+      var msg="✅ Reportes generados:\n";
+      if(data.results.pedido)msg+="\n📋 "+data.results.pedido.name;
+      if(data.results.asn)msg+="\n📦 "+data.results.asn.name;
+      msg+="\n\nGuardados en Drive.";
+      alert(msg);
+      embSessions[activeEmbSession]=null;
+      saveEmbSessions();
+      goPage("pageEmbarques");
+    }else{
+      alert("❌ Error: "+data.error+"\n\nSe descargará CSV local.");
+      downloadCSV();
+      document.getElementById("btnCloseEmb").disabled=false;
+      document.getElementById("btnCloseEmb").textContent="📤 Generar reporte y subir a Drive";
+    }
+  })
+  .catch(function(err){
+    alert("❌ Error de conexión: "+err+"\n\nSe descargará CSV local.");
+    downloadCSV();
+    document.getElementById("btnCloseEmb").disabled=false;
+    document.getElementById("btnCloseEmb").textContent="📤 Generar reporte y subir a Drive";
+  });
+}
+
 function closeEmbSession(){
   var s=embSessions[activeEmbSession];
   if(!s)return;
   if(s.lines&&s.lines.length>0){
-    if(!confirm("¿Generar reporte y cerrar sesión?"))return;
-    stopScanner();
-    uploadToDrive(s);
+    showCloseOptions();
   }else{
     if(!confirm("¿Cerrar esta sesión?"))return;
     stopScanner();
@@ -629,38 +691,6 @@ function closeEmbSession(){
     saveEmbSessions();
     goPage("pageEmbarques");
   }
-}
-
-function uploadToDrive(s){
-  document.getElementById("btnCloseEmb").disabled=true;
-  document.getElementById("btnCloseEmb").textContent="Subiendo al Drive...";
-
-  var payload=JSON.stringify({client:s.client,lines:s.lines});
-
-  fetch(APPS_SCRIPT_URL,{
-    method:"POST",
-    body:payload
-  })
-  .then(function(r){return r.json();})
-  .then(function(data){
-    if(data.success){
-      alert("✅ Reporte generado:\n"+data.name+"\n\nGuardado en Drive. Puedes abrirlo desde cualquier equipo.");
-      embSessions[activeEmbSession]=null;
-      saveEmbSessions();
-      goPage("pageEmbarques");
-    }else{
-      alert("❌ Error al subir: "+data.error+"\n\nSe descargará CSV local como respaldo.");
-      downloadCSV();
-      document.getElementById("btnCloseEmb").disabled=false;
-      document.getElementById("btnCloseEmb").textContent="Cerrar y limpiar sesión";
-    }
-  })
-  .catch(function(err){
-    alert("❌ Error de conexión: "+err+"\n\nSe descargará CSV local como respaldo.");
-    downloadCSV();
-    document.getElementById("btnCloseEmb").disabled=false;
-    document.getElementById("btnCloseEmb").textContent="Cerrar y limpiar sesión";
-  });
 }
 
 // ========== INIT ==========
