@@ -164,10 +164,11 @@ h3{font-size:16px;margin-bottom:8px}
   <div id="embClientInfo" style="display:none" class="mb12"></div>
 
   <div id="embClientSelect" class="mb12">
-    <span class="field-label">Seleccionar cliente</span>
+    <span class="field-label">Seleccionar o escribir cliente</span>
     <div class="ac-wrap" id="ac-emb-client">
-      <input class="inp" id="embClientInput" placeholder="Buscar cliente" oninput="showEmbClientDrop()" onfocus="showEmbClientDrop()">
+      <input class="inp" id="embClientInput" placeholder="Buscar o escribir cliente" oninput="showEmbClientDrop()" onfocus="showEmbClientDrop()">
     </div>
+    <button class="btn-green" id="btnConfirmClient" onclick="confirmFreeClient()" style="margin-top:8px">Confirmar cliente</button>
   </div>
 
   <div id="embContent" style="display:none">
@@ -340,6 +341,15 @@ function openEmbSession(idx){
   goPage("pageEmbSession");
 }
 
+function confirmFreeClient(){
+  var val=document.getElementById("embClientInput").value.trim();
+  if(!val){alert("Escribe o selecciona un cliente");return;}
+  embSessions[activeEmbSession]={client:val,lines:[]};
+  saveEmbSessions();
+  closeDropdowns();
+  openEmbSession(activeEmbSession);
+}
+
 function showEmbClientDrop(){
   closeDropdowns();
   var val=(document.getElementById("embClientInput").value||"").toLowerCase();
@@ -353,10 +363,8 @@ function showEmbClientDrop(){
       var s=SHIP_TO[key];var d=document.createElement("div");d.className="ac-item";
       d.innerHTML='<b>'+key+'</b><div class="detail">'+s.real+'</div>';
       d.onclick=function(){
-        embSessions[activeEmbSession]={client:key,lines:[]};
-        saveEmbSessions();
+        document.getElementById("embClientInput").value=key;
         closeDropdowns();
-        openEmbSession(activeEmbSession);
       };
       drop.appendChild(d);
     })(filt[i]);
