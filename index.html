@@ -172,7 +172,7 @@ h2{font-size:18px;margin-bottom:2px}h3{font-size:16px;margin-bottom:8px}h4{font-
     </div>
     <div id="embLines"></div>
     <div id="embSummary" style="display:none" class="saved-count mb12"></div>
-    <button class="btn-blue" id="btnDownloadCSV" style="display:none" onclick="downloadCSV()">Descargar CSV local</button>
+    <button class="btn-blue" id="btnDownloadCSV" style="display:none" onclick="downloadCSV()">Descargar Pedido local (CSV)</button>
     <button class="btn-green" id="btnCloseEmb" style="display:none" onclick="showCloseOptions()">📤 Generar reporte y subir a Drive</button>
     <div id="closeOptions" style="display:none" class="card mb8">
       <div style="font-weight:700;font-size:14px;margin-bottom:10px">¿Qué reportes generar?</div>
@@ -956,21 +956,47 @@ function renderEmbLines(){
 }
 
 // ====== CSV Y CIERRE ======
-function buildCSV(sess,type){
-  var rows=[];
-  if(type==="pedido"){
-    rows.push(["Item ID","Descripcion","Cantidad","OC","OT","Ship To","Peso Unit","Peso Total","Fecha"]);
-    for(var i=0;i<sess.lines.length;i++){
-      var l=sess.lines[i];
-      rows.push([l.itemId,l.descripcion,l.qty,l.oc,l.ot,l.shipTo,l.pesoUnit,l.kg,l.fecha]);
-    }
-  }else{ // asn
-    rows.push(["Item ID","Descripcion","Cantidad","OC","OT","Ship To","Peso Kg","Bulto","Fecha Embarque"]);
-    for(var j=0;j<sess.lines.length;j++){
-      var m=sess.lines[j];
-      rows.push([m.itemId,m.descripcion,m.qty,m.oc,m.ot,m.shipTo,m.kg,(j+1),m.fecha||todayStr()]);
-    }
+// ====== TOAST ======
+function showToast(msg,type){
+  var t=document.getElementById("mkmToast");
+  if(!t){
+    t=document.createElement("div");
+    t.id="mkmToast";
+    t.style.cssText="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:14px 20px;border-radius:10px;color:#fff;font-weight:700;font-size:14px;z-index:9999;box-shadow:0 6px 20px rgba(0,0,0,0.3);max-width:90%;text-align:center;line-height:1.4";
+    document.body.appendChild(t);
   }
+  t.style.background=type==="error"?"#c62828":(type==="warn"?"#e65100":"#1a6b3c");
+  t.textContent=msg;
+  t.style.display="block";
+  clearTimeout(t._tm);
+  t._tm=setTimeout(function(){t.style.display="none";},type==="error"?5000:3500);
+}
+
+// ====== DESCARGA LOCAL (respaldo) ======
+function buildPedidoCSVLocal(sess){
+  // CSV de respaldo con el mismo formato consolidado que genera Apps Script
+  var grouped={};var order=[];
+  for(var i=0;i<sess.lines.length;i++){
+    var l=sess.lines[i];
+    var oc=(l.oc||"").toString().trim();
+    var ot=(l.ot||"").toString().trim();
+    var key=(l.itemId||"")+"||"+oc+"||"+ot;
+    var qty=parseFloat(l.qty)||0;
+    if(grouped[key]){grouped[key].qty+=qty;}
+    else{grouped[key]={itemId:l.itemId||"",qty:qty,oc:oc,ot:ot};order.push(key);}
+  }
+  var rows=[["Codigo","Cantidad","Precio","Comentarios","Producto o servicio","Lotes (Separados x coma)"]];
+  for(var k=0;k<order.length;k++){
+    var g=grouped[order[k]];
+    var com="";
+    if(g.oc&&g.ot)com="OC: "+g.oc+" / OT: "+g.ot;
+    else if(g.oc)com="OC: "+g.oc;
+    else if(g.ot)com="OT: "+g.ot;
+    rows.push([g.itemId,g.qty,"",com,"",""]);
+  }
+  return csvEscape(rows);
+}
+function csvEscape(rows){
   return rows.map(function(r){
     return r.map(function(v){
       v=(v==null?"":String(v));
@@ -981,62 +1007,85 @@ function buildCSV(sess,type){
 }
 function downloadCSV(){
   var sess=embSessions[activeEmbSession];
-  if(!sess.lines.length)return;
-  var csv=buildCSV(sess,"pedido");
+  if(!sess||!sess.lines.length)return;
+  var csv=buildPedidoCSVLocal(sess);
   var blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8;"});
   var url=URL.createObjectURL(blob);
+  var client=sanitizeFileName(sess.clientLabel||sess.shipTo||"cliente");
+  var stamp=new Date();
+  var stampStr=stamp.toISOString().slice(0,10)+"_"+("0"+stamp.getHours()).slice(-2)+"-"+("0"+stamp.getMinutes()).slice(-2);
   var a=document.createElement("a");
   a.href=url;
-  a.download="pedido_"+(sess.shipTo||"cliente")+"_"+todayStr()+".csv";
+  a.download="Pedido_"+client+"_"+stampStr+".csv";
   document.body.appendChild(a);a.click();document.body.removeChild(a);
   URL.revokeObjectURL(url);
+  showToast("✓ CSV descargado localmente");
 }
+function sanitizeFileName(s){if(!s)return"sin_nombre";return String(s).replace(/[\/\\:*?"<>|]/g,"_").replace(/\s+/g,"_").substring(0,80);}
+
 function showCloseOptions(){
   document.getElementById("closeOptions").style.display="block";
 }
 function doCloseSession(type){
   var sess=embSessions[activeEmbSession];
-  if(!sess.lines.length){alert("No hay líneas");return;}
+  if(!sess||!sess.lines.length){showToast("No hay líneas capturadas","warn");return;}
   var btns=document.querySelectorAll("#closeOptions button");
   for(var b=0;b<btns.length;b++)btns[b].disabled=true;
+  showToast("⟳ Subiendo a Drive...","warn");
+
+  // Preparar payload minimo: el Apps Script consolida, no el cliente
   var payload={
-    action:"upload_reports",
-    session:activeEmbSession+1,
-    client:sess.clientLabel||sess.shipTo,
-    shipTo:sess.shipTo,
-    fecha:todayStr(),
+    client:sess.clientLabel||sess.shipTo||"Cliente",
+    shipTo:sess.shipTo||"",
     type:type,
-    pedidoCSV:buildCSV(sess,"pedido"),
-    asnCSV:type==="ambos"?buildCSV(sess,"asn"):"",
-    lines:sess.lines
+    lines:sess.lines.map(function(l){
+      return{
+        itemId:l.itemId||"",
+        descripcion:l.descripcion||"",
+        oc:l.oc||"",
+        ot:l.ot||"",
+        qty:l.qty||"",
+        pesoUnit:l.pesoUnit||"",
+        kg:l.kg||"",
+        shipTo:l.shipTo||""
+      };
+    })
   };
+
+  // IMPORTANTE: text/plain evita preflight CORS en Apps Script
   fetch(APPS_SCRIPT_URL,{
     method:"POST",
-    mode:"no-cors",
+    redirect:"follow",
     headers:{"Content-Type":"text/plain;charset=utf-8"},
     body:JSON.stringify(payload)
-  }).then(function(){
-    alert("✓ Reporte enviado a Drive.\n\nTambién se descarga copia local.");
-    downloadCSV();
-    if(type==="ambos"){
-      var csvAsn=buildCSV(sess,"asn");
-      var blob=new Blob(["\ufeff"+csvAsn],{type:"text/csv;charset=utf-8;"});
-      var url=URL.createObjectURL(blob);
-      var a=document.createElement("a");
-      a.href=url;a.download="asn_"+(sess.shipTo||"cliente")+"_"+todayStr()+".csv";
-      document.body.appendChild(a);a.click();document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+  }).then(function(r){
+    return r.text();
+  }).then(function(txt){
+    var resp;
+    try{resp=JSON.parse(txt);}catch(e){resp={success:false,error:"Respuesta inválida: "+txt.substring(0,100)};}
+    for(var b=0;b<btns.length;b++)btns[b].disabled=false;
+    if(resp.success){
+      var msg="✓ Subido a Drive";
+      if(resp.results){
+        var parts=[];
+        if(resp.results.pedido)parts.push("Pedido ("+resp.results.pedido.rows+" filas)");
+        if(resp.results.asn)parts.push("ASN ("+resp.results.asn.rows+" filas)");
+        if(parts.length)msg="✓ "+parts.join(" + ")+" subido a Drive";
+      }
+      showToast(msg);
+      // Limpiar sesion
+      embSessions[activeEmbSession]=null;
+      saveEmbSession(activeEmbSession);
+      document.getElementById("closeOptions").style.display="none";
+      setTimeout(function(){backToSessions();},1500);
+    }else{
+      showToast("✗ Error: "+(resp.error||"desconocido"),"error");
+      console.error("Apps Script error:",resp);
     }
-    // Limpiar sesión
-    embSessions[activeEmbSession]=null;
-    saveEmbSession(activeEmbSession);
-    for(var b=0;b<btns.length;b++)btns[b].disabled=false;
-    document.getElementById("closeOptions").style.display="none";
-    backToSessions();
   }).catch(function(err){
-    alert("⚠ Error al subir a Drive: "+err+"\n\nSe descargará CSV local.");
-    downloadCSV();
     for(var b=0;b<btns.length;b++)btns[b].disabled=false;
+    showToast("✗ Error de red: "+err.message,"error");
+    console.error("Fetch error:",err);
   });
 }
 
