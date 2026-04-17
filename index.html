@@ -1,4 +1,4 @@
-<div class="lbl-footer"><div style="flex:1;display:flex;border-right:1px solid #000"><div style="flex:1;display:flex;align-items:flex-end;padding:3px 6px"><div style="font-size:8px;color:#000;font-weight:700">ACEPTADO CALIDAD</div></div><div style="display:flex;align-items:flex-end;padding:3px 6px"><div style="font-size:8px;color:#000;font-weight:700">'+(fecha||"—")+'</div></div></div><div style="display:flex;align-items:center;justify-content:center;padding:1px"><img src="'+qr<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -57,16 +57,12 @@ h2{font-size:18px;margin-bottom:2px}h3{font-size:16px;margin-bottom:8px}
 </style>
 </head>
 <body>
-
-<!-- MENU -->
 <div class="page active" id="pageMenu">
   <div style="text-align:center;padding:20px 0 10px"><img src="https://makenmetal.github.io/maken-etiquetas/LOGO-MKM.jpg" style="height:50px" alt="MKM"><p class="sub" style="margin-top:6px">Sistema de Etiquetas y Embarques</p></div>
   <div class="toolbar" style="justify-content:center"><button class="btn btn-sync" id="btnSyncMenu" onclick="fetchCatalogo()">⟳ Sync</button><span class="status" id="syncStatus" style="color:#666">● Cargando...</span></div>
   <div class="menu-card" onclick="goPage('pageEtiquetas')"><h3>🏷 Etiquetas de Liberación</h3><p>Generar e imprimir etiquetas de producto</p></div>
   <div class="menu-card" onclick="goPage('pageEmbarques')"><h3>📦 Pedidos de Embarque</h3><p>Escanear QR y generar CSV para ERP</p></div>
 </div>
-
-<!-- ETIQUETAS -->
 <div class="page" id="pageEtiquetas">
   <button class="back-btn" onclick="goPage('pageMenu')">← Menú</button>
   <h2>Etiquetas de Liberación</h2><p class="sub">MAKEN METAL S.A. DE C.V.</p>
@@ -89,15 +85,11 @@ h2{font-size:18px;margin-bottom:2px}h3{font-size:16px;margin-bottom:8px}
     <div id="previewUrg" style="display:none"></div>
   </div>
 </div>
-
-<!-- EMBARQUES -->
 <div class="page" id="pageEmbarques">
   <button class="back-btn" onclick="goPage('pageMenu')">← Menú</button>
   <h2>Pedidos de Embarque</h2><p class="sub">Escanea QR de etiquetas para generar pedido</p>
   <div id="embSessions"></div>
 </div>
-
-<!-- EMBARQUE SESION -->
 <div class="page" id="pageEmbSession">
   <button class="back-btn" onclick="backToSessions()">← Sesiones</button>
   <h3 id="embSessionTitle">Sesión 1</h3>
@@ -139,17 +131,13 @@ h2{font-size:18px;margin-bottom:2px}h3{font-size:16px;margin-bottom:8px}
     <button class="btn" id="btnChangeClient" style="display:none;width:100%;margin-bottom:10px;color:#c00;border-color:#c00" onclick="changeEmbClient()">Cambiar cliente</button>
   </div>
 </div>
-
 <div id="previewArea" style="display:none"></div>
-
 <script>
 var SHEET_URL="https://docs.google.com/spreadsheets/d/e/2PACX-1vQ1JtoJW5D7HZ3pXd4VTGb7Ii5LLWd7LTYMjpl5hP_RYOEN2U5O41gnqSrCGeRKqA/pub?output=csv";
 var SHEET_SHIPTO_URL="https://docs.google.com/spreadsheets/d/e/2PACX-1vQ1JtoJW5D7HZ3pXd4VTGb7Ii5LLWd7LTYMjpl5hP_RYOEN2U5O41gnqSrCGeRKqA/pub?gid=1896208322&single=true&output=csv";
 var LOGO_URL="https://makenmetal.github.io/maken-etiquetas/LOGO-MKM.jpg";
 var APPS_SCRIPT_URL="https://script.google.com/macros/s/AKfycbxVviqjYgK7lhsvY4LgAZer2KmblPHbmuikNQZeZmMvuJJMhi75te4rukicWNz-3iE2/exec";
-var SHIP_TO={};
-var catalogo=[];
-var lineId=0;
+var SHIP_TO={};var catalogo=[];var lineId=0;
 var prodLines=[];var urgLines=[];var prodPrev=false;var urgPrev=false;var activeTab="prod";
 var embSessions=[null,null,null,null];var activeEmbSession=-1;
 var qrScanner=null;var scannerRunning=false;var scanPaused=false;var SCAN_PAUSE_MS=3000;
@@ -157,11 +145,8 @@ var qrScanner=null;var scannerRunning=false;var scanPaused=false;var SCAN_PAUSE_
 function mkLine(){lineId++;return{id:lineId,bpoLineId:"",shipTo:"",itemId:"",descripcion:"",ordenTrabajo:"",cantidad:"",pesoUnit:"",copias:"1"};}
 function calcPN(pu,c){var a=parseFloat(pu),b=parseFloat(c);return(isNaN(a)||isNaN(b)||b===0)?"":(a*b).toFixed(2);}
 function initDates(){var t=new Date().toISOString().split("T")[0];document.getElementById("fechaProd").value=t;document.getElementById("fechaUrg").value=t;}
-
-// NAV
 function goPage(id){var pages=document.querySelectorAll(".page");for(var i=0;i<pages.length;i++)pages[i].classList.remove("active");document.getElementById(id).classList.add("active");if(id==="pageEmbarques")renderEmbSessions();window.scrollTo(0,0);}
 
-// FETCH
 function fetchCatalogo(){
   document.getElementById("syncStatus").innerHTML='<span style="color:#666">● Cargando...</span>';document.getElementById("btnSyncMenu").disabled=true;var done=0;
   function checkDone(){done++;if(done>=2){document.getElementById("btnSyncMenu").disabled=false;}}
@@ -169,7 +154,6 @@ function fetchCatalogo(){
   Papa.parse(SHEET_URL,{download:true,header:true,skipEmptyLines:true,dynamicTyping:false,complete:function(r){if(r.data&&r.data.length>0){var hd=Object.keys(r.data[0]).map(function(h){return h.trim();});catalogo=r.data.map(function(row){var v=hd.map(function(k){return(row[k]||"").toString().trim();});return{bpoLineId:v[0]||"",shipTo:v[1]||"",itemId:v[2]||"",descripcion:v[3]||"",pesoUnit:v[4]||"",loteOptimo:v[5]||""};}).filter(function(x){return x.itemId;});catalogo.sort(function(a,b){return a.itemId.localeCompare(b.itemId);});var t=new Date().toLocaleTimeString();document.getElementById("syncStatus").innerHTML='<span style="color:#1a6b3c">● Sheet — '+catalogo.length+' productos | '+Object.keys(SHIP_TO).length+' destinos ('+t+')</span>';}else{document.getElementById("syncStatus").innerHTML='<span style="color:#c00">● Sin datos</span>';}checkDone();},error:function(){document.getElementById("syncStatus").innerHTML='<span style="color:#c00">● Error</span>';checkDone();}});
 }
 
-// ETIQUETAS
 function switchTab(tab){activeTab=tab;document.getElementById("panelProd").style.display=tab==="prod"?"block":"none";document.getElementById("panelUrg").style.display=tab==="urg"?"block":"none";document.getElementById("tabProd").className=tab==="prod"?"tab active-prod":"tab";document.getElementById("tabUrg").className=tab==="urg"?"tab active-urg":"tab";}
 function saveProdState(){var data={lines:prodLines,fecha:document.getElementById("fechaProd").value};localStorage.setItem("mkm_prod",JSON.stringify(data));updateSavedCount();}
 function loadProdState(){try{var raw=localStorage.getItem("mkm_prod");if(raw){var data=JSON.parse(raw);if(data.lines&&data.lines.length>0){prodLines=data.lines;lineId=0;for(var i=0;i<prodLines.length;i++){if(prodLines[i].id>lineId)lineId=prodLines[i].id;}document.getElementById("fechaProd").value=data.fecha||new Date().toISOString().split("T")[0];return true;}}}catch(e){}return false;}
@@ -188,93 +172,52 @@ function remLine(li,mode){var lns=getLines(mode);if(lns.length>1){lns.splice(li,
 function renderLines(mode){var lns=getLines(mode);var container=document.getElementById("lines"+(mode==="prod"?"Prod":"Urg"));var h="";for(var i=0;i<lns.length;i++){var ln=lns[i];var pn=calcPN(ln.pesoUnit,ln.cantidad);h+='<div class="card">';h+='<div class="card-head"><span>Linea '+(i+1)+'</span><button onclick="remLine('+i+',\''+mode+'\')">✕</button></div>';h+='<div class="mb8"><span class="field-label">Item ID</span><div class="ac-wrap" id="ac-'+mode+'-'+ln.id+'"><input class="inp" value="'+ln.itemId+'" oninput="updateField('+i+',\'itemId\',this.value,\''+mode+'\');showDropdown('+i+',\''+mode+'\')" onfocus="showDropdown('+i+',\''+mode+'\')" placeholder="Buscar Item ID"></div></div>';h+='<div class="mb8"><span class="field-label">Descripcion</span><input class="inp" value="'+ln.descripcion+'" oninput="updateField('+i+',\'descripcion\',this.value,\''+mode+'\')"></div>';h+='<div class="grid2"><div><span class="field-label">OC (BPO)</span><input class="inp" value="'+ln.bpoLineId+'" oninput="updateField('+i+',\'bpoLineId\',this.value,\''+mode+'\')"></div>';h+='<div><span class="field-label">Ship To</span><div class="ac-wrap" id="st-'+mode+'-'+ln.id+'"><input class="inp" value="'+ln.shipTo+'" oninput="updateField('+i+',\'shipTo\',this.value,\''+mode+'\');showShipDropdown('+i+',\''+mode+'\')" onfocus="showShipDropdown('+i+',\''+mode+'\')" placeholder="Buscar destino"></div></div></div>';h+='<div class="mb8"><span class="field-label">Orden de Trabajo</span><input class="inp" value="'+ln.ordenTrabajo+'" oninput="updateField('+i+',\'ordenTrabajo\',this.value,\''+mode+'\')"></div>';h+='<div class="grid2"><div><span class="field-label">Cantidad (pzas)</span><input class="inp" type="number" value="'+ln.cantidad+'" oninput="updateField('+i+',\'cantidad\',this.value,\''+mode+'\')"></div>';h+='<div><span class="field-label">Peso Unit. (kg)</span><input class="inp" style="background:#f0f0f0" value="'+ln.pesoUnit+'" oninput="updateField('+i+',\'pesoUnit\',this.value,\''+mode+'\')"></div></div>';h+='<div class="peso-badge" id="pn-'+mode+'-'+ln.id+'" style="display:'+(pn?"block":"none")+'">Peso Neto: <span class="val">'+(pn||"")+' kg</span></div>';h+='<div class="mb8" style="margin-top:8px"><span class="field-label">Copias de esta etiqueta</span><input class="inp" type="number" min="1" value="'+(ln.copias||"1")+'" oninput="updateField('+i+',\'copias\',this.value,\''+mode+'\')" style="max-width:80px"></div>';h+='</div>';}container.innerHTML=h;if(mode==="prod")updateSavedCount();}
 function togglePreviewProd(){prodPrev=!prodPrev;document.getElementById("btnPrevProd").textContent=prodPrev?"Ocultar":"Vista previa";renderPreview("prod");document.getElementById("previewProd").style.display=prodPrev?"block":"none";}
 function togglePreviewUrg(){urgPrev=!urgPrev;document.getElementById("btnPrevUrg").textContent=urgPrev?"Ocultar":"Vista previa";renderPreview("urg");document.getElementById("previewUrg").style.display=urgPrev?"block":"none";}
-function makeLabel(ln,fecha){var pn=calcPN(ln.pesoUnit,ln.cantidad);var st=SHIP_TO[ln.shipTo]||{real:ln.shipTo||"—",dir:"",noProv:""};var qrData=encodeURIComponent("MKM|"+ln.itemId+"|OC:"+ln.bpoLineId+"|OT:"+ln.ordenTrabajo+"|"+ln.shipTo+"|Q:"+ln.cantidad+"|KG:"+pn+"|"+fecha);var qrUrl="https://api.qrserver.com/v1/create-qr-code/?size=90x90&data="+qrData+"&margin=1";return '<div class="lbl"><div class="lbl-logo-bar"><img src="'+LOGO_URL+'" height="22" alt="MKM"></div><div class="lbl-header"><div class="lbl-header-left"><div style="font-weight:800;font-size:10px">MAKEN METAL, S.A DE C.V</div><div style="font-size:7.5px;color:#444">RFC: MME2012015J0</div><div style="font-size:7.5px;color:#444">Prof. José Rodríguez 1035, Col. Universidad</div><div style="font-size:7.5px;color:#444">CP 25260, Saltillo, Coahuila</div>'+(st.noProv?'<div style="font-size:8px;margin-top:1px"><b>No. Prov:</b> '+st.noProv+'</div>':'')+'</div><div class="lbl-header-right"><div style="font-weight:800;font-size:10px">'+st.real+'</div><div style="font-size:7.5px;color:#444;margin-top:1px">'+st.dir+'</div></div></div><div class="lbl-big-row"><div class="lbl-big-cell" style="flex:1.5"><div class="lbl-big-label">No. de Parte</div><div class="lbl-big-val" style="font-size:18px">'+(ln.itemId||"—")+'</div><div style="font-size:8px;margin-top:1px;color:#333">'+(ln.descripcion||"")+'</div></div><div class="lbl-big-cell" style="border-right:none"><div class="lbl-big-label">Cantidad</div><div class="lbl-big-val" style="font-size:18px">'+(ln.cantidad||"—")+'</div><div style="font-size:7px;color:#555">PIEZAS</div></div></div><div class="lbl-detail-row"><div class="lbl-detail-cell" style="flex:1"><div style="font-size:7px;color:#555;text-transform:uppercase;letter-spacing:0.5px">Orden de Compra</div><div style="font-size:14px;font-weight:900">'+(ln.bpoLineId||"—")+'</div></div><div class="lbl-detail-cell" style="border-right:none;flex:1"><div style="font-size:7px;color:#555;text-transform:uppercase;letter-spacing:0.5px">Orden de Trabajo</div><div style="font-size:14px;font-weight:800">'+(ln.ordenTrabajo||"—")+'</div></div></div><div class="lbl-footer"><div style="flex:1;display:flex;border-right:1px solid #000"><div style="flex:1;display:flex;align-items:flex-end;padding:3px 6px"><div style="font-size:8px;color:#000;font-weight:700">ACEPTADO CALIDAD</div></div><div style="display:flex;align-items:flex-end;padding:3px 6px"><div style="font-size:8px;color:#000;font-weight:700">'+(fecha||"—")+'</div></div></div><div style="width:85px;display:flex;align-items:center;justify-content:center;padding:1px"><img src="'+qrUrl+'" width="80" height="80" alt="QR"></div></div></div>';}
+
+function makeLabel(ln,fecha){
+  var pn=calcPN(ln.pesoUnit,ln.cantidad);
+  var st=SHIP_TO[ln.shipTo]||{real:ln.shipTo||"—",dir:"",noProv:""};
+  var qrData=encodeURIComponent("MKM|"+ln.itemId+"|OC:"+ln.bpoLineId+"|OT:"+ln.ordenTrabajo+"|"+ln.shipTo+"|Q:"+ln.cantidad+"|KG:"+pn+"|"+fecha);
+  var qrUrl="https://api.qrserver.com/v1/create-qr-code/?size=90x90&data="+qrData+"&margin=1";
+  var noProv=st.noProv?'<div style="font-size:8px;margin-top:1px"><b>No. Prov:</b> '+st.noProv+'</div>':"";
+  var h='<div class="lbl">';
+  h+='<div class="lbl-logo-bar"><img src="'+LOGO_URL+'" height="28" alt="MKM"></div>';
+  h+='<div class="lbl-header">';
+  h+='<div class="lbl-header-left">';
+  h+='<div style="font-weight:800;font-size:10px">MAKEN METAL, S.A DE C.V</div>';
+  h+='<div style="font-size:7.5px;color:#444">RFC: MME2012015J0</div>';
+  h+='<div style="font-size:7.5px;color:#444">Prof. José Rodríguez 1035, Col. Universidad</div>';
+  h+='<div style="font-size:7.5px;color:#444">CP 25260, Saltillo, Coahuila</div>';
+  h+=noProv;
+  h+='</div>';
+  h+='<div class="lbl-header-right">';
+  h+='<div style="font-weight:800;font-size:10px">'+st.real+'</div>';
+  h+='<div style="font-size:7.5px;color:#444;margin-top:1px">'+st.dir+'</div>';
+  h+='</div></div>';
+  h+='<div class="lbl-big-row">';
+  h+='<div class="lbl-big-cell" style="flex:1.5"><div class="lbl-big-label">No. de Parte</div><div class="lbl-big-val" style="font-size:18px">'+(ln.itemId||"—")+'</div><div style="font-size:8px;margin-top:1px;color:#333">'+(ln.descripcion||"")+'</div></div>';
+  h+='<div class="lbl-big-cell" style="border-right:none"><div class="lbl-big-label">Cantidad</div><div class="lbl-big-val" style="font-size:18px">'+(ln.cantidad||"—")+'</div><div style="font-size:7px;color:#555">PIEZAS</div></div>';
+  h+='</div>';
+  h+='<div class="lbl-detail-row">';
+  h+='<div class="lbl-detail-cell" style="flex:1"><div style="font-size:7px;color:#555;text-transform:uppercase;letter-spacing:0.5px">Orden de Compra</div><div style="font-size:14px;font-weight:900">'+(ln.bpoLineId||"—")+'</div></div>';
+  h+='<div class="lbl-detail-cell" style="border-right:none;flex:1"><div style="font-size:7px;color:#555;text-transform:uppercase;letter-spacing:0.5px">Orden de Trabajo</div><div style="font-size:14px;font-weight:800">'+(ln.ordenTrabajo||"—")+'</div></div>';
+  h+='</div>';
+  h+='<div class="lbl-footer">';
+  h+='<div style="flex:1;display:flex;border-right:1px solid #000">';
+  h+='<div style="flex:1;display:flex;align-items:flex-end;padding:3px 6px"><div style="font-size:8px;color:#000;font-weight:700">ACEPTADO CALIDAD</div></div>';
+  h+='<div style="display:flex;align-items:flex-end;padding:3px 6px"><div style="font-size:8px;color:#000;font-weight:700">'+(fecha||"—")+'</div></div>';
+  h+='</div>';
+  h+='<div style="width:85px;display:flex;align-items:center;justify-content:center;padding:1px"><img src="'+qrUrl+'" width="80" height="80" alt="QR"></div>';
+  h+='</div></div>';
+  return h;
+}
+
 function renderPreview(mode){var lns=getLines(mode);var isPrev=mode==="prod"?prodPrev:urgPrev;var fecha=document.getElementById(mode==="prod"?"fechaProd":"fechaUrg").value;var filled=lns.filter(function(l){return l.itemId.trim()&&l.cantidad.trim();});var area=document.getElementById(mode==="prod"?"previewProd":"previewUrg");var btn=document.getElementById(mode==="prod"?"btnPrintProd":"btnPrintUrg");btn.style.display=(isPrev&&filled.length>0)?"block":"none";if(!isPrev)return;if(!filled.length){area.innerHTML='<p style="color:#888;font-size:13px;text-align:center;padding:20px">Captura Item ID y cantidad.</p>';return;}var all=[];for(var i=0;i<filled.length;i++){var cp=parseInt(filled[i].copias)||1;if(cp<1)cp=1;if(cp>50)cp=50;for(var c=0;c<cp;c++)all.push(makeLabel(filled[i],fecha));}area.innerHTML='<div style="overflow-x:auto"><div style="display:flex;flex-direction:column;gap:8px;align-items:center;min-width:300px">'+all.join("")+'</div></div>';}
-function printLabels(mode){var lns=getLines(mode);var fecha=document.getElementById(mode==="prod"?"fechaProd":"fechaUrg").value;var filled=lns.filter(function(l){return l.itemId.trim()&&l.cantidad.trim();});if(!filled.length)return;var all=[];for(var i=0;i<filled.length;i++){var cp=parseInt(filled[i].copias)||1;if(cp<1)cp=1;if(cp>50)cp=50;for(var c=0;c<cp;c++)all.push(makeLabel(filled[i],fecha));}var pw=window.open("","_blank");pw.document.write('<!DOCTYPE html><html><head><title>Etiquetas MKM</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif}.print-grid{display:grid;grid-template-columns:4in 4in;grid-auto-rows:3in;justify-content:center;align-content:start;column-gap:0.5in;row-gap:0.33in;width:8.5in;margin:0 auto;padding:0.5in 0in 0in 0in}.lbl{width:4in;height:3in;border:1.5px solid #000;font-family:Arial,sans-serif;display:flex;flex-direction:column;background:#fff;color:#000;overflow:hidden;page-break-inside:avoid}.lbl-logo-bar{border-bottom:1.5px solid #000;padding:2px 8px;display:flex;align-items:center;justify-content:center}.lbl-logo-bar img{height:22px}.lbl-header{display:flex;border-bottom:1px solid #000}.lbl-header-left{flex:1;padding:2px 6px;border-right:1px solid #000;line-height:1.15}.lbl-header-right{flex:1;padding:2px 6px;line-height:1.15}.lbl-big-row{display:flex;border-bottom:1.5px solid #000}.lbl-big-cell{flex:1;padding:3px 6px;text-align:center;border-right:1px solid #000}.lbl-big-cell:last-child{border-right:none}.lbl-big-label{font-size:7px;color:#555;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:1px}.lbl-big-val{font-weight:900;line-height:1.1}.lbl-detail-row{display:flex;border-bottom:1px solid #000}.lbl-detail-cell{flex:1;padding:2px 6px;border-right:1px solid #000}.lbl-detail-cell:last-child{border-right:none}.lbl-detail-label{font-size:6px;color:#666;margin-bottom:0px}.lbl-footer{display:flex;flex:1}@page{margin:0;size:letter}</style></head><body><div class="print-grid">'+all.join("")+'</div></body></html>');pw.document.close();setTimeout(function(){pw.print();},800);if(mode==="urg"){urgLines=[mkLine()];urgPrev=false;document.getElementById("btnPrevUrg").textContent="Vista previa";document.getElementById("previewUrg").style.display="none";document.getElementById("btnPrintUrg").style.display="none";renderLines("urg");}}
 
-// EMBARQUES
-function loadEmbSessions(){try{var raw=localStorage.getItem("mkm_emb");if(raw)embSessions=JSON.parse(raw);}catch(e){}}
-function saveEmbSessions(){localStorage.setItem("mkm_emb",JSON.stringify(embSessions));}
-function renderEmbSessions(){var h="";for(var i=0;i<4;i++){var s=embSessions[i];var hasData=s&&s.client;var cls=hasData?"session-card has-data":"session-card";var title="Sesión "+(i+1);var desc="Disponible";if(hasData){var st=SHIP_TO[s.client]||{real:s.client};var lc=s.lines?s.lines.length:0;desc=s.client+" — "+(st.real||s.client)+" ("+lc+" línea"+(lc!==1?"s":"")+")";}h+='<div class="'+cls+'" onclick="openEmbSession('+i+')"><h4>'+title+'</h4><p>'+desc+'</p></div>';}document.getElementById("embSessions").innerHTML=h;}
-function openEmbSession(idx){activeEmbSession=idx;var s=embSessions[idx];document.getElementById("embSessionTitle").textContent="Sesión "+(idx+1);if(s&&s.client){var st=SHIP_TO[s.client]||{real:s.client};document.getElementById("embClientSelect").style.display="none";document.getElementById("embClientInfo").style.display="block";document.getElementById("embClientInfo").innerHTML='<div style="background:var(--greenbg);border-radius:8px;padding:10px;font-size:14px"><b>'+s.client+'</b> — '+(st.real||s.client)+'</div>';document.getElementById("embContent").style.display="block";renderEmbLines();}else{document.getElementById("embClientSelect").style.display="block";document.getElementById("embClientInfo").style.display="none";document.getElementById("embContent").style.display="none";document.getElementById("embClientInput").value="";}goPage("pageEmbSession");}
-function confirmFreeClient(){var val=document.getElementById("embClientInput").value.trim();if(!val){alert("Escribe o selecciona un cliente");return;}embSessions[activeEmbSession]={client:val,lines:[]};saveEmbSessions();closeDropdowns();openEmbSession(activeEmbSession);}
-function showEmbClientDrop(){closeDropdowns();var val=(document.getElementById("embClientInput").value||"").toLowerCase();var keys=Object.keys(SHIP_TO);var filt=val?keys.filter(function(k){var s=SHIP_TO[k];return k.toLowerCase().indexOf(val)>=0||(s.real||"").toLowerCase().indexOf(val)>=0;}):keys;if(!filt.length)return;var wrap=document.getElementById("ac-emb-client");var drop=document.createElement("div");drop.className="ac-drop";for(var i=0;i<filt.length;i++){(function(key){var s=SHIP_TO[key];var d=document.createElement("div");d.className="ac-item";d.innerHTML='<b>'+key+'</b><div class="detail">'+s.real+'</div>';d.onclick=function(){document.getElementById("embClientInput").value=key;closeDropdowns();};drop.appendChild(d);})(filt[i]);}wrap.appendChild(drop);}
-function backToSessions(){try{stopScanner();}catch(e){}setTimeout(function(){goPage("pageEmbarques");},100);}
-
-// SCANNER
-function toggleScanner(){if(scannerRunning){stopScanner();}else{startScanner();}}
-function startScanner(){document.getElementById("qrReader").style.display="block";document.getElementById("btnScanToggle").textContent="⏹ Cerrar cámara";document.getElementById("btnScanToggle").style.background="#c00";scanPaused=false;qrScanner=new Html5Qrcode("qrReader");qrScanner.start({facingMode:"environment"},{fps:10,qrbox:{width:250,height:250}},function(decoded){if(scanPaused)return;scanPaused=true;processQRData(decoded);try{var ac=new(window.AudioContext||window.webkitAudioContext)();var o=ac.createOscillator();o.type="sine";o.frequency.value=800;o.connect(ac.destination);o.start();setTimeout(function(){o.stop();},150);}catch(e){}document.getElementById("btnScanToggle").textContent="⏳ Espera...";setTimeout(function(){scanPaused=false;if(scannerRunning){document.getElementById("btnScanToggle").textContent="⏹ Cerrar cámara";}},SCAN_PAUSE_MS);},function(){}).catch(function(err){alert("No se pudo acceder a la cámara: "+err);stopScanner();});scannerRunning=true;}
-function stopScanner(){if(qrScanner){try{qrScanner.stop().then(function(){qrScanner.clear();}).catch(function(){});}catch(e){}}document.getElementById("qrReader").style.display="none";document.getElementById("btnScanToggle").textContent="📷 Abrir cámara para escanear";document.getElementById("btnScanToggle").style.background="var(--blue)";scannerRunning=false;}
-function processManualQR(){var val=document.getElementById("manualQR").value.trim();if(!val){alert("Pega el contenido del QR");return;}processQRData(val);document.getElementById("manualQR").value="";}
-function processQRData(raw){if(!raw)return;var parts=raw.split("|");if(parts.length<6||parts[0]!=="MKM"){alert("QR no válido: "+raw);return;}var itemId=parts[1]||"";var oc="",ot="",ship="",qty="";for(var i=2;i<parts.length;i++){if(parts[i].indexOf("OC:")===0)oc=parts[i].substring(3);else if(parts[i].indexOf("OT:")===0)ot=parts[i].substring(3);else if(parts[i].indexOf("Q:")===0)qty=parts[i].substring(2);}if(!ship&&parts.length>=5)ship=parts[4];var s=embSessions[activeEmbSession];if(!s)return;if(ship!==s.client){alert("⚠ Esta etiqueta es de "+ship+"\nLa sesión es para "+s.client+"\nNo se puede agregar.");return;}var found=false;for(var j=0;j<s.lines.length;j++){if(s.lines[j].itemId===itemId&&s.lines[j].ot===ot){s.lines[j].qty=parseInt(s.lines[j].qty)+parseInt(qty||0);found=true;break;}}if(!found){s.lines.push({itemId:itemId,oc:oc,ot:ot,qty:parseInt(qty)||0,shipTo:ship});}saveEmbSessions();renderEmbLines();}
-
-// MANUAL ENTRY
-function toggleManualEntry(){var form=document.getElementById("manualEntryForm");if(form.style.display==="none"){form.style.display="block";document.getElementById("btnManualEntry").textContent="✕ Cerrar captura manual";}else{form.style.display="none";document.getElementById("btnManualEntry").textContent="✏ QR dañado — Captura manual";}}
-function showManualItemDrop(){closeDropdowns();var val=(document.getElementById("manItemId").value||"").toLowerCase();var s=embSessions[activeEmbSession];if(!s)return;var clientFilter=s.client;var filt=catalogo.filter(function(c){var matchClient=c.shipTo===clientFilter;if(!val)return matchClient;return matchClient&&((c.itemId||"").toLowerCase().indexOf(val)>=0||(c.descripcion||"").toLowerCase().indexOf(val)>=0);});if(!filt.length)return;var wrap=document.getElementById("ac-emb-manual");var drop=document.createElement("div");drop.className="ac-drop";for(var i=0;i<filt.length;i++){(function(idx){var it=filt[idx];var d=document.createElement("div");d.className="ac-item";d.innerHTML='<b>'+it.itemId+'</b> — '+it.descripcion+'<div class="detail">BPO: '+it.bpoLineId+'</div>';d.onclick=function(){document.getElementById("manItemId").value=it.itemId;document.getElementById("manOC").value=it.bpoLineId;if(it.loteOptimo)document.getElementById("manQty").value=it.loteOptimo;closeDropdowns();};drop.appendChild(d);})(i);}wrap.appendChild(drop);}
-function addManualEntry(){var itemId=document.getElementById("manItemId").value.trim();var ot=document.getElementById("manOT").value.trim();var qty=document.getElementById("manQty").value.trim();var oc=document.getElementById("manOC").value.trim();if(!itemId){alert("Selecciona un Item ID");return;}if(!qty){alert("Captura la cantidad");return;}var s=embSessions[activeEmbSession];if(!s)return;var found=false;for(var j=0;j<s.lines.length;j++){if(s.lines[j].itemId===itemId&&s.lines[j].ot===ot){s.lines[j].qty=parseInt(s.lines[j].qty)+parseInt(qty);found=true;break;}}if(!found){s.lines.push({itemId:itemId,oc:oc,ot:ot,qty:parseInt(qty)||0,shipTo:s.client});}saveEmbSessions();renderEmbLines();document.getElementById("manItemId").value="";document.getElementById("manOT").value="";document.getElementById("manQty").value="";document.getElementById("manOC").value="";toggleManualEntry();}
-
-function removeEmbLine(idx){var s=embSessions[activeEmbSession];if(s&&s.lines){s.lines.splice(idx,1);saveEmbSessions();renderEmbLines();}}
-function renderEmbLines(){var s=embSessions[activeEmbSession];if(!s||!s.lines)return;var el=document.getElementById("embLines");var sum=document.getElementById("embSummary");var btnCSV=document.getElementById("btnDownloadCSV");var btnClose=document.getElementById("btnCloseEmb");var btnChange=document.getElementById("btnChangeClient");document.getElementById("closeOptions").style.display="none";if(s.lines.length===0){el.innerHTML='<p style="color:#888;font-size:13px;text-align:center;padding:14px">Escanea etiquetas QR para agregar líneas</p>';sum.style.display="none";btnCSV.style.display="none";btnClose.style.display="none";btnChange.style.display="block";return;}var h="";var totalPcs=0;for(var i=0;i<s.lines.length;i++){var ln=s.lines[i];totalPcs+=ln.qty;var desc="";for(var j=0;j<catalogo.length;j++){if(catalogo[j].itemId===ln.itemId){desc=catalogo[j].descripcion;break;}}h+='<div class="emb-line"><div class="info"><b>'+ln.itemId+'</b>'+(desc?' — '+desc:'')+'<div class="det">OT: '+ln.ot+' | OC: '+ln.oc+'</div></div><div class="qty">'+ln.qty+'</div><button onclick="removeEmbLine('+i+')" style="background:none;border:none;color:#c00;cursor:pointer;font-size:16px;margin-left:8px">✕</button></div>';}el.innerHTML=h;sum.innerHTML='<b>'+s.lines.length+'</b> línea'+(s.lines.length>1?'s':'')+' — <b>'+totalPcs+'</b> piezas totales';sum.style.display="block";btnCSV.style.display="block";btnClose.style.display="block";btnChange.style.display="none";}
-function changeEmbClient(){if(!confirm("¿Cambiar cliente de esta sesión?"))return;try{stopScanner();}catch(e){}embSessions[activeEmbSession]=null;saveEmbSessions();openEmbSession(activeEmbSession);}
-
-function downloadCSV(){var s=embSessions[activeEmbSession];if(!s||!s.lines||!s.lines.length)return;var csv="Codigo,Cantidad,Precio,Comentarios,Producto o servicio,Lotes (Separados x coma)\n";for(var i=0;i<s.lines.length;i++){var ln=s.lines[i];csv+=ln.itemId+","+ln.qty+",,OC: "+ln.oc+" / OT: "+ln.ot+",,\n";}var blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});var url=URL.createObjectURL(blob);var a=document.createElement("a");var today=new Date().toISOString().split("T")[0];a.href=url;a.download="pedido_"+s.client+"_"+(activeEmbSession+1)+"_"+today+".csv";a.click();URL.revokeObjectURL(url);}
-
-// CLOSE SESSION WITH OPTIONS
-function showCloseOptions(){setTimeout(function(){document.getElementById("closeOptions").style.display="block";},50);}
-
-function doCloseSession(type){
-  document.getElementById("closeOptions").style.display="none";
-  var s=embSessions[activeEmbSession];
-  if(!s||!s.lines||!s.lines.length)return;
-  try{stopScanner();}catch(e){}
-  document.getElementById("btnCloseEmb").disabled=true;
-  document.getElementById("btnCloseEmb").textContent="Subiendo al Drive...";
-  var enrichedLines=[];
-  for(var i=0;i<s.lines.length;i++){
-    var ln=s.lines[i];var desc="";var pesoUnit="0";
-    for(var j=0;j<catalogo.length;j++){if(catalogo[j].itemId===ln.itemId){desc=catalogo[j].descripcion;pesoUnit=catalogo[j].pesoUnit;break;}}
-    enrichedLines.push({itemId:ln.itemId,oc:ln.oc,ot:ln.ot,qty:ln.qty,shipTo:ln.shipTo,desc:desc,pesoUnit:pesoUnit});
-  }
-  var payload=JSON.stringify({type:type,client:s.client,lines:enrichedLines,asnLines:enrichedLines});
-  fetch(APPS_SCRIPT_URL,{method:"POST",body:payload})
-  .then(function(r){return r.json();})
-  .then(function(data){
-    if(data.success){
-      var msg="✅ Reportes generados:\n";
-      if(data.results.pedido)msg+="\n📋 "+data.results.pedido.name;
-      if(data.results.asn)msg+="\n📦 "+data.results.asn.name;
-      msg+="\n\nGuardados en Drive.";
-      alert(msg);
-      embSessions[activeEmbSession]=null;saveEmbSessions();goPage("pageEmbarques");
-    }else{
-      alert("❌ Error: "+(data.error||"desconocido")+"\n\nSe descargará CSV local.");
-      downloadCSV();
-      document.getElementById("btnCloseEmb").disabled=false;document.getElementById("btnCloseEmb").textContent="📤 Generar reporte y subir a Drive";
-    }
-  })
-  .catch(function(err){
-    alert("❌ Error de conexión: "+err+"\n\nSe descargará CSV local.");
-    downloadCSV();
-    document.getElementById("btnCloseEmb").disabled=false;document.getElementById("btnCloseEmb").textContent="📤 Generar reporte y subir a Drive";
-  });
-}
-
-function closeEmbSession(){
-  var s=embSessions[activeEmbSession];
-  if(!s)return;
-  if(s.lines&&s.lines.length>0){showCloseOptions();}
-  else{if(!confirm("¿Cerrar esta sesión?"))return;try{stopScanner();}catch(e){}embSessions[activeEmbSession]=null;saveEmbSessions();goPage("pageEmbarques");}
-}
-
-// INIT
-document.addEventListener("click",function(e){if(!e.target.closest(".ac-wrap"))closeDropdowns();});
-initDates();
-if(!loadProdState()){prodLines=[mkLine()];}
-urgLines=[mkLine()];
-loadEmbSessions();
-fetchCatalogo();
-renderLines("prod");
-renderLines("urg");
-</script>
-</body>
-</html>
+function printLabels(mode){var lns=getLines(mode);var fecha=document.getElementById(mode==="prod"?"fechaProd":"fechaUrg").value;var filled=lns.filter(function(l){return l.itemId.trim()&&l.cantidad.trim();});if(!filled.length)return;var all=[];for(var i=0;i<filled.length;i++){var cp=parseInt(filled[i].copias)||1;if(cp<1)cp=1;if(cp>50)cp=50;for(var c=0;c<cp;c++)all.push(makeLabel(filled[i],fecha));}var pw=window.open("","_blank");
+pw.document.write('<!DOCTYPE html><html><head><title>Etiquetas MKM</title><style>');
+pw.document.write('*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif}');
+pw.document.write('.print-grid{display:grid;grid-template-columns:4in 4in;grid-auto-rows:3in;justify-content:center;align-content:start;column-gap:0.5in;row-gap:0.33in;width:8.5in;margin:0 auto;padding:0.5in 0in 0in 0in}');
+pw.document.write('.lbl{width:4in;height:3in;border:1.5px solid #000;font-family:Arial,sans-serif;display:flex;flex-direction:column;background:#fff;color:#000;overflow:hidden;page-break-inside:avoid}');
+pw.document.write('.lbl-logo-bar{border-bottom:1.5px solid #000;padding:3px 8px;display:flex;align-items:center;justify-content:center}.lbl-logo-bar img{height:28px}');
+pw.document.write('.lbl-header{display:flex;border-bottom:1px solid #000}.lbl-header-left{flex:1;padding:3px 6px;border-right:1px solid #000;line-height:1.2}.lbl-header-right{flex:1;padding:3px 6px;line-height:1.2}');
+pw.document.write('.lbl-big-row{display:flex;border-bottom:
