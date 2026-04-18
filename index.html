@@ -1250,19 +1250,20 @@ function processQR(str){
   if(!sess.contenedores||sess.contenedores.length===0||sess.activeCont<0){
     showToast("Primero crea un contenedor","warn");return;
   }
-  // Candado: duplicado
+  // Candado: duplicado — pausar MÁS tiempo para evitar spam del toast si la cámara sigue apuntando
   if(isDuplicateQR(sess,str)){
-    showToast("✗ Etiqueta ya escaneada en esta sesión","error");
+    showToast("✗ Etiqueta ya escaneada","error");
+    // Extender la pausa del scanner para que no reaparezca el mismo error repetido
+    scanPaused=true;
+    setTimeout(function(){scanPaused=false;},4000);
     return;
   }
   var q=parseQR(str);
   if(!q||!q.itemId){showToast("QR no reconocido","error");return;}
-  // Candado: ShipTo diferente al cliente de la sesion (solo si sesion tiene shipTo del catalogo)
   if(!sess.freeClient&&sess.shipTo&&q.shipTo&&q.shipTo!==sess.shipTo){
     showToast("✗ Etiqueta es para "+q.shipTo+", sesión es "+sess.shipTo,"error");
     return;
   }
-  // Candado: validar Item ID contra catálogo (solo si cliente no es libre)
   if(!sess.freeClient&&sess.shipTo){
     var catMatch=validateItemVsShipTo(q.itemId,sess.shipTo);
     if(catMatch.status==="mismatch"){
@@ -1273,7 +1274,6 @@ function processQR(str){
       showToast("⚠ "+q.itemId+" no está en catálogo, se agrega como libre","warn");
     }
   }
-  // Enriquecer con catálogo
   var desc="",pesoUnit="",empaqueSugerido="";
   for(var i=0;i<catalogo.length;i++){
     if(catalogo[i].itemId===q.itemId){
@@ -1384,6 +1384,8 @@ var pendingIsManual=false;
 function openCajaModal(bulto,fromManual){
   pendingBulto=bulto;
   pendingIsManual=fromManual;
+  // Pausar scanner mientras modal está abierto — evita escaneos mientras el usuario selecciona caja
+  scanPaused=true;
   var sugerido=(bulto.empaqueSugerido||"").toString().trim();
   var sugeridoLower=sugerido.toLowerCase();
 
@@ -1439,6 +1441,8 @@ function selectCajaBtn(el){
 function cancelCajaModal(){
   pendingBulto=null;
   document.getElementById("cajaModal").style.display="none";
+  // Reanudar scanner
+  scanPaused=false;
 }
 function confirmCajaModal(){
   if(!pendingBulto)return;
@@ -1465,10 +1469,29 @@ function confirmCajaModal(){
   }
   pendingBulto=null;
   document.getElementById("cajaModal").style.display="none";
+
+  // Si el scanner estaba corriendo, apagarlo antes del re-render (el DOM de qrReader se destruye)
+  var wasScanning=scannerRunning;
+  if(wasScanning){
+    // Apagar sin mostrar "Abrir cámara" en el boton
+    try{if(qrScanner)qrScanner.stop().catch(function(){});}catch(e){}
+    scannerRunning=false;
+  }
+
   renderContenedorTabs();
   renderContenedorActivo();
   renderEmbSummary();
   showToast("✓ Bulto agregado — Caja: "+cajaDesc);
+
+  // Si estaba escaneando, reanudar automáticamente
+  if(wasScanning){
+    setTimeout(function(){
+      scanPaused=false;
+      startScanner();
+    },300);
+  }else{
+    scanPaused=false;
+  }
 }
 
 // ====== CSV Y CIERRE ======
@@ -1702,13 +1725,21 @@ function imprimirEtiquetasContenedor(){
 function makeEtiquetaEmbarque(sess,cont,idx,total){
   // Calcular peso total y resumen del contenedor
   var totalPzs=0,totalKg=0;
-  var items={};
+  var totalCajas=cont.bultos.length; // cada bulto escaneado = 1 caja física
+  // Agrupar por Item+OC para la lista "Contiene"
+  var grupos={};var orden=[];
   for(var i=0;i<cont.bultos.length;i++){
-    totalPzs+=parseFloat(cont.bultos[i].qty)||0;
-    totalKg+=parseFloat(cont.bultos[i].kg)||0;
-    items[cont.bultos[i].itemId]=(items[cont.bultos[i].itemId]||0)+(parseFloat(cont.bultos[i].qty)||0);
+    var bb=cont.bultos[i];
+    totalPzs+=parseFloat(bb.qty)||0;
+    totalKg+=parseFloat(bb.kg)||0;
+    var k=(bb.oc||"-")+"||"+(bb.itemId||"-");
+    if(grupos[k]){
+      grupos[k].qty+=parseFloat(bb.qty)||0;
+    }else{
+      grupos[k]={oc:bb.oc||"",itemId:bb.itemId||"",qty:parseFloat(bb.qty)||0};
+      orden.push(k);
+    }
   }
-  var itemIds=Object.keys(items);
   var st=SHIP_TO[sess.shipTo]||{real:sess.clientLabel||"—",dirEntrega:"",noProv:""};
   var fecha=new Date().toLocaleDateString("es-MX",{year:"numeric",month:"2-digit",day:"2-digit"});
   var reqASN=clientRequiresASN(sess);
@@ -1716,39 +1747,60 @@ function makeEtiquetaEmbarque(sess,cont,idx,total){
   // QR con toda la info
   var qrPayload="MKM-EMB|REM:"+(sess.remision||"")+"|CLI:"+(sess.shipTo||sess.clientLabel||"")
     +"|CONT:"+(idx+1)+"/"+total+"|DESC:"+cont.descripcion
-    +"|PZS:"+totalPzs+"|KG:"+totalKg.toFixed(2);
+    +"|PZS:"+totalPzs+"|KG:"+totalKg.toFixed(2)+"|CAJAS:"+totalCajas;
   if(reqASN&&sess.numeroASN)qrPayload+="|ASN:"+sess.numeroASN;
   qrPayload+="|"+fecha;
   var qrUrl="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data="+encodeURIComponent(qrPayload)+"&margin=1";
 
-  // Lista breve de items (hasta 5 para que quepa)
-  var itemList=itemIds.slice(0,5).map(function(id){return id+" ("+items[id]+")";}).join(", ");
-  if(itemIds.length>5)itemList+=" +"+(itemIds.length-5)+" más";
+  // Lista vertical de items (máx 16; si hay más, truncar con "+X más")
+  var MAX_ITEMS=16;
+  var itemsHtml="";
+  var shown=Math.min(orden.length,MAX_ITEMS);
+  for(var j=0;j<shown;j++){
+    var g=grupos[orden[j]];
+    itemsHtml+='<div class="emb-lbl-item-row"><span class="emb-lbl-item-oc">'+esc(g.oc||"—")+'</span><span class="emb-lbl-item-id">'+esc(g.itemId)+'</span><span class="emb-lbl-item-qty">'+g.qty+'</span></div>';
+  }
+  if(orden.length>MAX_ITEMS){
+    itemsHtml+='<div class="emb-lbl-item-row" style="color:#888;font-style:italic">+ '+(orden.length-MAX_ITEMS)+' partes más</div>';
+  }
 
   var h='<div class="emb-lbl">';
-  // Banda superior con logo
-  h+='<div class="emb-lbl-logo"><img src="'+LOGO_URL+'" alt="MKM"></div>';
-  // Cuerpo principal (3 columnas)
+  // Banda superior: Logo + Maken datos
+  h+='<div class="emb-lbl-top">';
+  h+='<img src="'+LOGO_URL+'" alt="MKM" class="emb-lbl-top-logo">';
+  h+='<div class="emb-lbl-top-info">';
+  h+='<div class="emb-lbl-top-name">MAKEN METAL, S.A DE C.V.</div>';
+  h+='<div class="emb-lbl-top-line">Prof. José Rodríguez 1035, Col. Universidad, CP 25260, Saltillo, Coah.</div>';
+  if(st.noProv)h+='<div class="emb-lbl-top-line"><b>No. Proveedor:</b> '+esc(st.noProv)+'</div>';
+  h+='</div></div>';
+  // Cuerpo principal (2 columnas)
   h+='<div class="emb-lbl-body">';
-  // Columna 1: Cliente + dirección + datos
+  // Columna izquierda: destino + datos + contiene
   h+='<div class="emb-lbl-col1">';
+  h+='<div class="emb-lbl-destino-lbl">DESTINO:</div>';
   h+='<div class="emb-lbl-cliente">'+esc(st.real)+'</div>';
   if(st.dirEntrega)h+='<div class="emb-lbl-dir">'+esc(st.dirEntrega)+'</div>';
   h+='<div class="emb-lbl-grid">';
   if(sess.remision)h+='<div class="emb-lbl-field"><div class="emb-lbl-lbl">REMISIÓN</div><div class="emb-lbl-val">'+esc(sess.remision)+'</div></div>';
   if(reqASN&&sess.numeroASN)h+='<div class="emb-lbl-field"><div class="emb-lbl-lbl"># ASN</div><div class="emb-lbl-val">'+esc(sess.numeroASN)+'</div></div>';
-  if(st.noProv)h+='<div class="emb-lbl-field"><div class="emb-lbl-lbl">NO. PROV</div><div class="emb-lbl-val">'+esc(st.noProv)+'</div></div>';
   h+='<div class="emb-lbl-field"><div class="emb-lbl-lbl">FECHA</div><div class="emb-lbl-val">'+esc(fecha)+'</div></div>';
   h+='</div>';
-  h+='<div class="emb-lbl-items"><b>Contiene:</b> '+esc(itemList)+'</div>';
+  // Listado contiene
+  h+='<div class="emb-lbl-contiene">';
+  h+='<div class="emb-lbl-contiene-hdr"><span>CONTIENE</span><span class="emb-lbl-contiene-col">OC</span><span class="emb-lbl-contiene-col">ITEM</span><span class="emb-lbl-contiene-col">QTY</span></div>';
+  h+=itemsHtml;
   h+='</div>';
-  // Columna 2: Tarima + peso
+  h+='</div>';
+  // Columna derecha: tarima + peso + QR
   h+='<div class="emb-lbl-col2">';
-  h+='<div class="emb-lbl-tarima"><div class="emb-lbl-tarima-big">'+(idx+1)+'<span style="font-size:16px"> de </span>'+total+'</div><div class="emb-lbl-tarima-sub">'+esc(cont.descripcion)+'</div></div>';
-  h+='<div class="emb-lbl-peso"><div class="emb-lbl-lbl">PESO TOTAL</div><div class="emb-lbl-peso-big">'+totalKg.toFixed(1)+' kg</div><div class="emb-lbl-lbl" style="margin-top:2px">'+totalPzs+' pzs</div></div>';
+  h+='<div class="emb-lbl-tarima"><div class="emb-lbl-tarima-big">'+(idx+1)+'<span style="font-size:15px"> de </span>'+total+'</div><div class="emb-lbl-tarima-sub">'+esc(cont.descripcion)+'</div></div>';
+  h+='<div class="emb-lbl-peso">';
+  h+='<div class="emb-lbl-lbl">PESO NETO</div>';
+  h+='<div class="emb-lbl-peso-big">'+totalKg.toFixed(1)+' kg</div>';
+  h+='<div class="emb-lbl-peso-sub">'+totalPzs+' pzs · '+totalCajas+' caja'+(totalCajas!==1?"s":"")+'</div>';
   h+='</div>';
-  // Columna 3: QR
-  h+='<div class="emb-lbl-col3"><div class="emb-lbl-qr"><img src="'+qrUrl+'" alt="QR"></div></div>';
+  h+='<div class="emb-lbl-qr"><img src="'+qrUrl+'" alt="QR"></div>';
+  h+='</div>';
   h+='</div></div>';
   return h;
 }
@@ -1767,42 +1819,55 @@ function generarEtiquetasEmbarque(sess,soloIdx){
     }
   }
   var pw=window.open("","_blank");
-  // Layout 5x4 horizontal: 2 etiquetas por fila, 2 filas = 4 por hoja carta
+  // Layout 5x4 horizontal: 2 etiquetas por fila × 2 filas = 4 por hoja carta
   var style=
     '*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,sans-serif}'
     +'.print-grid{display:grid;grid-template-columns:5in 5in;grid-auto-rows:4in;justify-content:center;align-content:start;column-gap:0.25in;row-gap:0.25in;width:10.5in;margin:0 auto;padding:0.25in 0 0 0}'
     +'@page{margin:0;size:letter landscape}'
     +'.emb-lbl{width:5in;height:4in;border:1.5px solid #000;display:flex;flex-direction:column;background:#fff;color:#000;overflow:hidden;page-break-inside:avoid}'
-    +'.emb-lbl-logo{border-bottom:1.5px solid #000;padding:4px;display:flex;align-items:center;justify-content:center;background:#fff;height:0.6in;flex-shrink:0}'
-    +'.emb-lbl-logo img{height:44px;max-width:100%}'
+    // Banda superior con logo + datos de Maken
+    +'.emb-lbl-top{border-bottom:1.5px solid #000;padding:3px 6px;display:flex;align-items:center;gap:8px;background:#fff;flex-shrink:0;height:0.55in}'
+    +'.emb-lbl-top-logo{height:40px;flex-shrink:0}'
+    +'.emb-lbl-top-info{flex:1;line-height:1.2}'
+    +'.emb-lbl-top-name{font-weight:800;font-size:10px}'
+    +'.emb-lbl-top-line{font-size:7.5px;color:#333}'
+    // Cuerpo
     +'.emb-lbl-body{display:flex;flex:1;overflow:hidden}'
-    +'.emb-lbl-col1{flex:1.6;padding:6px 8px;border-right:1px solid #000;display:flex;flex-direction:column;overflow:hidden}'
-    +'.emb-lbl-col2{flex:1;padding:6px 8px;border-right:1px solid #000;display:flex;flex-direction:column;align-items:center;justify-content:space-between}'
-    +'.emb-lbl-col3{flex:0.9;padding:6px 4px;display:flex;align-items:center;justify-content:center}'
-    +'.emb-lbl-cliente{font-weight:800;font-size:12px;line-height:1.15;margin-bottom:3px}'
-    +'.emb-lbl-dir{font-size:8.5px;color:#333;line-height:1.2;margin-bottom:6px;border-bottom:1px dashed #aaa;padding-bottom:4px}'
-    +'.emb-lbl-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 8px;margin-bottom:6px}'
-    +'.emb-lbl-field{line-height:1.15}'
-    +'.emb-lbl-lbl{font-size:7px;color:#555;text-transform:uppercase;letter-spacing:0.3px;font-weight:600}'
-    +'.emb-lbl-val{font-size:11px;font-weight:900}'
-    +'.emb-lbl-items{font-size:8px;color:#333;line-height:1.25;margin-top:auto;padding-top:4px;border-top:1px dashed #aaa}'
-    +'.emb-lbl-tarima{text-align:center;margin-top:4px}'
-    +'.emb-lbl-tarima-big{font-size:44px;font-weight:900;line-height:1;color:#000}'
-    +'.emb-lbl-tarima-sub{font-size:9.5px;font-weight:700;margin-top:2px;color:#333;line-height:1.15}'
-    +'.emb-lbl-peso{text-align:center;padding:6px 4px;border:1px solid #000;border-radius:4px;background:#f5f5f5;width:100%;margin-bottom:4px}'
-    +'.emb-lbl-peso-big{font-size:22px;font-weight:900;line-height:1.1}'
+    +'.emb-lbl-col1{flex:1.55;padding:4px 6px;border-right:1px solid #000;display:flex;flex-direction:column;overflow:hidden}'
+    +'.emb-lbl-col2{flex:1;padding:4px 6px;display:flex;flex-direction:column;align-items:center;justify-content:space-between}'
+    +'.emb-lbl-destino-lbl{font-size:7px;color:#555;text-transform:uppercase;letter-spacing:0.3px;font-weight:700}'
+    +'.emb-lbl-cliente{font-weight:800;font-size:11px;line-height:1.15;margin-bottom:2px}'
+    +'.emb-lbl-dir{font-size:7.5px;color:#333;line-height:1.2;margin-bottom:4px;border-bottom:1px dashed #aaa;padding-bottom:3px}'
+    +'.emb-lbl-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:2px 6px;margin-bottom:4px}'
+    +'.emb-lbl-field{line-height:1.1}'
+    +'.emb-lbl-lbl{font-size:6.5px;color:#555;text-transform:uppercase;letter-spacing:0.3px;font-weight:600}'
+    +'.emb-lbl-val{font-size:10px;font-weight:900}'
+    // Listado Contiene
+    +'.emb-lbl-contiene{flex:1;border:1px solid #aaa;border-radius:3px;padding:3px 5px;overflow:hidden;font-size:8.5px}'
+    +'.emb-lbl-contiene-hdr{display:grid;grid-template-columns:1fr 1.2fr 1.3fr 0.5fr;font-size:6.5px;color:#555;text-transform:uppercase;letter-spacing:0.3px;font-weight:700;border-bottom:1px solid #aaa;padding-bottom:2px;margin-bottom:2px}'
+    +'.emb-lbl-contiene-col{text-align:right}'
+    +'.emb-lbl-contiene-col:nth-child(2){text-align:left}'
+    +'.emb-lbl-item-row{display:grid;grid-template-columns:1fr 1.2fr 1.3fr 0.5fr;gap:4px;line-height:1.25;font-size:8px}'
+    +'.emb-lbl-item-row .emb-lbl-item-oc{grid-column:1/3;font-weight:600;color:#555}'
+    +'.emb-lbl-item-row .emb-lbl-item-id{font-weight:700;text-align:left}'
+    +'.emb-lbl-item-row .emb-lbl-item-qty{text-align:right;font-weight:900}'
+    // Col derecha
+    +'.emb-lbl-tarima{text-align:center;margin-top:2px}'
+    +'.emb-lbl-tarima-big{font-size:42px;font-weight:900;line-height:1;color:#000}'
+    +'.emb-lbl-tarima-sub{font-size:9px;font-weight:700;margin-top:2px;color:#333;line-height:1.15}'
+    +'.emb-lbl-peso{text-align:center;padding:4px;border:1.5px solid #000;border-radius:4px;background:#f5f5f5;width:100%;margin:4px 0}'
+    +'.emb-lbl-peso-big{font-size:20px;font-weight:900;line-height:1.1}'
+    +'.emb-lbl-peso-sub{font-size:8px;color:#333;margin-top:2px;font-weight:600}'
     +'.emb-lbl-qr{display:flex;align-items:center;justify-content:center}'
-    +'.emb-lbl-qr img{width:1.6in;height:1.6in}'
+    +'.emb-lbl-qr img{width:1.4in;height:1.4in}'
     +'@media print{body{margin:0}}';
   pw.document.write('<!DOCTYPE html><html><head><title>Etiquetas de Embarque MKM</title><style>'+style+'</style></head><body><div class="print-grid">'+all.join("")+'</div><script>window.onload=function(){setTimeout(function(){window.print();},500);}<\/script></body></html>');
   pw.document.close();
 
   if(soloIdx===null||soloIdx===undefined){
-    // Primera impresión (no reimprimir)
     setTimeout(function(){
       sess.etiquetasImpresas=true;
       saveEmbSession(activeEmbSession);
-      // Subir reporte al Drive (paso 4)
       uploadReporteUso(sess);
       renderEmbSummary();
       showToast("✓ Etiquetas enviadas a impresión");
