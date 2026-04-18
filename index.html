@@ -70,6 +70,15 @@ h2{font-size:18px;margin-bottom:2px}h3{font-size:16px;margin-bottom:8px}h4{font-
 /* Modal */
 .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px}
 .modal-content{background:#fff;border-radius:12px;padding:20px;max-width:420px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 10px 40px rgba(0,0,0,0.3)}
+/* Grid de empaques tappables */
+.empaque-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.empaque-btn{padding:12px 10px;border:2px solid var(--border);border-radius:10px;background:#fff;cursor:pointer;text-align:center;font-size:13px;font-weight:600;color:#333;transition:all 0.1s;min-height:60px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:3px}
+.empaque-btn:active{transform:scale(0.97)}
+.empaque-btn.selected{border-color:var(--green);background:var(--greenbg);color:var(--green)}
+.empaque-btn.suggested{border-color:var(--green);background:#c8e6c9;color:#1a6b3c;box-shadow:0 0 0 3px rgba(26,107,60,0.2)}
+.empaque-btn .code{font-size:14px;font-weight:800}
+.empaque-btn .desc{font-size:10px;color:#666;font-weight:500;line-height:1.2}
+.empaque-btn.selected .desc,.empaque-btn.suggested .desc{color:#2e7d32}
 @media print{body{background:#fff;padding:0;max-width:none;margin:0}.no-print{display:none!important}.print-grid{display:grid!important;grid-template-columns:4in 4in;grid-auto-rows:3in;justify-content:center;align-content:start;column-gap:0.5in;row-gap:0.33in;width:8.5in;margin:0 auto;padding:0.5in 0in 0in 0in}.lbl{border:1.5px solid #000;margin:0;width:4in;height:3in}@page{margin:0;size:letter}}
 </style>
 </head>
@@ -207,17 +216,40 @@ h2{font-size:18px;margin-bottom:2px}h3{font-size:16px;margin-bottom:8px}h4{font-
   <div class="modal-content">
     <div style="font-weight:700;font-size:16px;margin-bottom:4px">Asignar caja</div>
     <div id="cajaModalBulto" class="sub" style="margin-bottom:12px"></div>
-    <div class="field-label">Tipo de caja</div>
-    <div class="ac-wrap mb12">
-      <select class="inp" id="cajaSelect">
-        <option value="">-- Selecciona una caja --</option>
-      </select>
-    </div>
+    <div class="field-label">Selecciona el tipo de caja</div>
+    <div id="cajaButtons" class="empaque-grid mb12"></div>
     <div class="field-label">O escribir caja libre</div>
-    <input class="inp mb12" id="cajaFreeInput" placeholder="Ej: Caja cartón grande">
+    <input class="inp mb12" id="cajaFreeInput" placeholder="Ej: Caja de cartón especial">
     <div style="display:flex;gap:8px">
       <button class="btn" onclick="cancelCajaModal()" style="flex:1">Cancelar</button>
       <button class="btn-green" onclick="confirmCajaModal()" style="flex:1;margin:0;padding:10px">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Seleccionar tipo de contenedor principal -->
+<div id="contModal" class="modal-overlay" style="display:none">
+  <div class="modal-content">
+    <div style="font-weight:700;font-size:16px;margin-bottom:4px">Nuevo contenedor</div>
+    <div class="sub" style="margin-bottom:12px">Selecciona el tipo de contenedor principal</div>
+    <div id="contButtons" class="empaque-grid mb12"></div>
+    <div class="field-label">O escribir contenedor libre</div>
+    <input class="inp mb12" id="contFreeInput" placeholder="Ej: Tarima especial">
+    <div style="display:flex;gap:8px">
+      <button class="btn" onclick="cancelContModal()" style="flex:1">Cancelar</button>
+      <button class="btn-green" onclick="confirmContModal()" style="flex:1;margin:0;padding:10px">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal genérico de confirmación -->
+<div id="confirmModal" class="modal-overlay" style="display:none">
+  <div class="modal-content">
+    <div id="confirmModalTitle" style="font-weight:700;font-size:16px;margin-bottom:8px"></div>
+    <div id="confirmModalMsg" class="sub" style="margin-bottom:16px"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn" onclick="cancelConfirmModal()" style="flex:1">Cancelar</button>
+      <button class="btn-red" onclick="okConfirmModal()" style="flex:1;margin:0;padding:10px">Confirmar</button>
     </div>
   </div>
 </div>
@@ -234,7 +266,7 @@ var APPS_SCRIPT_URL="https://script.google.com/macros/s/AKfycbxVviqjYgK7lhsvY4Lg
 // ====== STATE ======
 var SHIP_TO={};
 var catalogo=[];
-var EMPAQUES={contenedores:[],cajas:[]};  // {descripcion:"..."} para cada tipo
+var EMPAQUES={lista:[]};  // {codigo, descripcion} para cada empaque
 var lineId=0;
 var prodLines=[];
 var urgLines=[];
@@ -288,7 +320,7 @@ function fetchCatalogo(){
       if(btn)btn.disabled=false;
       var t=new Date().toLocaleTimeString();
       if(catalogo.length>0){
-        var empCount=EMPAQUES.contenedores.length+EMPAQUES.cajas.length;
+        var empCount=(EMPAQUES.lista||[]).length;
         statusEl.innerHTML='<span style="color:#1a6b3c">● Sheet — '+catalogo.length+' productos | '+Object.keys(SHIP_TO).length+' destinos | '+empCount+' empaques ('+t+')</span>';
       }else if(errors>0){
         statusEl.innerHTML='<span style="color:#c00">● Error de conexión — verifica tu Sheet</span>';
@@ -331,10 +363,9 @@ function fetchCatalogo(){
     },
     error:function(e){errors++;console.error("ShipTo fetch error:",e);checkDone();}
   });
-  // --- Empaques (contenedores y cajas) ---
+  // --- Empaques (códigos de contenedores/cajas disponibles) ---
   if(SHEET_EMPAQUES_URL.indexOf("EMPAQUES_GID")>=0){
-    // No configurado, saltar
-    EMPAQUES={contenedores:[],cajas:[]};
+    EMPAQUES={lista:[]};
     checkDone();
   }else{
     Papa.parse(SHEET_EMPAQUES_URL+"&_ts="+Date.now(),{
@@ -343,24 +374,24 @@ function fetchCatalogo(){
         try{
           if(r.data&&r.data.length>0){
             var headers=Object.keys(r.data[0]);
-            var hTipo=findCol(headers,["tipo","type","categoria","categoría"])||headers[0];
+            var hCod=findCol(headers,["codigo","código","code","tipo","id"])||headers[0];
             var hDesc=findCol(headers,["descripcion","descripción","description","desc","nombre"])||headers[1];
-            EMPAQUES={contenedores:[],cajas:[]};
+            var lista=[];
             r.data.forEach(function(row){
-              var tipo=((row[hTipo]||"").toString().trim()).toLowerCase();
-              var desc=(row[hDesc]||"").toString().trim();
-              if(!desc)return;
-              if(tipo.indexOf("conten")>=0||tipo.indexOf("tarima")>=0||tipo.indexOf("pallet")>=0){
-                EMPAQUES.contenedores.push({descripcion:desc});
-              }else if(tipo.indexOf("caja")>=0||tipo.indexOf("box")>=0){
-                EMPAQUES.cajas.push({descripcion:desc});
+              var codigo=(row[hCod]||"").toString().trim();
+              var descripcion=(row[hDesc]||"").toString().trim();
+              if(codigo){
+                lista.push({codigo:codigo,descripcion:descripcion});
               }
             });
+            EMPAQUES={lista:lista};
+          }else{
+            EMPAQUES={lista:[]};
           }
-        }catch(e){errors++;console.error("Empaques parse error:",e);}
+        }catch(e){errors++;console.error("Empaques parse error:",e);EMPAQUES={lista:[]};}
         checkDone();
       },
-      error:function(e){errors++;console.error("Empaques fetch error:",e);checkDone();}
+      error:function(e){errors++;console.error("Empaques fetch error:",e);EMPAQUES={lista:[]};checkDone();}
     });
   }
   // --- Catálogo ---
@@ -432,7 +463,7 @@ function loadProdState(){
   return false;
 }
 function clearProd(){
-  if(confirm("¿Limpiar toda la sesión de producción?")){
+  askConfirm("¿Limpiar sesión?","¿Limpiar toda la sesión de producción?",function(){
     prodLines=[mkLine()];
     try{localStorage.removeItem("mkm_prod");}catch(e){}
     prodPrev=false;
@@ -442,7 +473,7 @@ function clearProd(){
     document.getElementById("btnClearProd").style.display="none";
     renderLines("prod");
     updateSavedCount();
-  }
+  });
 }
 function updateSavedCount(){
   var filled=prodLines.filter(function(l){return l.itemId.trim()&&l.cantidad.trim();});
@@ -616,7 +647,10 @@ function togglePreviewUrg(){
 function makeLabel(ln,fecha){
   var pn=calcPN(ln.pesoUnit,ln.cantidad);
   var st=SHIP_TO[ln.shipTo]||{real:ln.shipTo||"—",dirFiscal:"",dirEntrega:"",noProv:""};
-  var qrData=encodeURIComponent("MKM|"+ln.itemId+"|OC:"+ln.bpoLineId+"|OT:"+ln.ordenTrabajo+"|"+ln.shipTo+"|Q:"+ln.cantidad+"|KG:"+pn+"|"+fecha);
+  // UID único por etiqueta: 6 caracteres aleatorios + timestamp en ms
+  // Garantiza unicidad entre dispositivos y entre etiquetas con los mismos datos
+  var uid=Math.random().toString(36).substring(2,8)+"-"+Date.now();
+  var qrData=encodeURIComponent("MKM|"+ln.itemId+"|OC:"+ln.bpoLineId+"|OT:"+ln.ordenTrabajo+"|"+ln.shipTo+"|Q:"+ln.cantidad+"|KG:"+pn+"|"+fecha+"|UID:"+uid);
   var qrUrl="https://api.qrserver.com/v1/create-qr-code/?size=90x90&data="+qrData+"&margin=1";
   var noProv=st.noProv?'<div style="font-size:8px;margin-top:1px"><b>No. Prov:</b> '+esc(st.noProv)+'</div>':"";
   var h='<div class="lbl">';
@@ -781,10 +815,12 @@ function renderEmbSessions(){
   var h="";
   for(var i=0;i<4;i++){
     var s=embSessions[i];
-    var cls=s?"session-card has-data":"session-card";
+    var st=s?countSessionStats(s):{bultos:0,pzs:0,kg:0,cont:0};
+    // Una sesión es "con datos" solo si tiene bultos capturados
+    var hasData=s&&st.bultos>0;
+    var cls=hasData?"session-card has-data":"session-card";
     var lbl="Vacía";
-    if(s){
-      var st=countSessionStats(s);
+    if(hasData){
       lbl=(s.clientLabel||s.shipTo||"Cliente")+" — "+st.cont+" contenedor"+(st.cont!==1?"es":"")+", "+st.bultos+" bultos";
     }
     h+='<div class="'+cls+'" onclick="openEmbSession('+i+')"><h4>Sesión '+(i+1)+'</h4><p>'+esc(lbl)+'</p></div>';
@@ -811,6 +847,9 @@ function openEmbSession(i){
   if(typeof s.asnEnviado==="undefined")s.asnEnviado=false;
   if(typeof s.numeroASN==="undefined")s.numeroASN="";
   if(typeof s.etiquetasImpresas==="undefined")s.etiquetasImpresas=false;
+  // Limpiar SIEMPRE los inputs del DOM al abrir sesión; renderSteps los pre-llena solo si hay dato guardado
+  var r=document.getElementById("inpRemision");if(r)r.value=s.remision||"";
+  var n=document.getElementById("inpNumASN");if(n)n.value=s.numeroASN||"";
   goPage("pageEmbSession");
   document.getElementById("embSessionTitle").textContent="Sesión "+(i+1);
   if(s.shipTo||s.clientLabel){
@@ -888,38 +927,75 @@ function changeEmbClient(){
   var sess=embSessions[activeEmbSession];
   var st=countSessionStats(sess);
   if(st.bultos>0){
-    if(!confirm("⚠ Ya hay "+st.bultos+" bultos capturados. Cambiar cliente puede invalidarlos. ¿Continuar?"))return;
+    askConfirm("¿Cambiar cliente?","Ya hay "+st.bultos+" bultos capturados. Cambiar cliente puede invalidarlos.",function(){
+      doChangeEmbClient();
+    });
+  }else{
+    doChangeEmbClient();
   }
+}
+function doChangeEmbClient(){
+  var sess=embSessions[activeEmbSession];
   sess.shipTo="";sess.clientLabel="";sess.freeClient=false;
+  // Si no hay bultos, vaciar la sesión completa para que no aparezca como "con datos"
+  var st=countSessionStats(sess);
+  if(st.bultos===0){
+    embSessions[activeEmbSession]=null;
+  }
   saveEmbSession(activeEmbSession);
-  document.getElementById("embClientSelect").style.display="block";
-  document.getElementById("embClientInfo").style.display="none";
-  document.getElementById("embContent").style.display="none";
-  document.getElementById("embClientInput").value="";
+  if(!embSessions[activeEmbSession]){
+    backToSessions();
+  }else{
+    document.getElementById("embClientSelect").style.display="block";
+    document.getElementById("embClientInfo").style.display="none";
+    document.getElementById("embContent").style.display="none";
+    document.getElementById("embClientInput").value="";
+  }
 }
 
 // ====== CONTENEDORES ======
 function addContenedor(){
+  openContModal();
+}
+
+function openContModal(){
+  var btns=document.getElementById("contButtons");
+  var h="";
+  var lista=(EMPAQUES.lista||[]);
+  if(lista.length===0){
+    h='<div style="grid-column:span 2;padding:12px;text-align:center;color:#888;font-size:12px">No hay empaques en catálogo.<br>Escribe libre abajo.</div>';
+  }else{
+    for(var i=0;i<lista.length;i++){
+      var e=lista[i];
+      h+='<div class="empaque-btn" data-codigo="'+esc(e.codigo)+'" onclick="selectContBtn(this)"><div class="code">'+esc(e.codigo)+'</div><div class="desc">'+esc(e.descripcion||"")+'</div></div>';
+    }
+  }
+  btns.innerHTML=h;
+  document.getElementById("contFreeInput").value="";
+  document.getElementById("contModal").style.display="flex";
+}
+function selectContBtn(el){
+  var siblings=document.querySelectorAll("#contButtons .empaque-btn");
+  for(var i=0;i<siblings.length;i++)siblings[i].classList.remove("selected");
+  el.classList.add("selected");
+  document.getElementById("contFreeInput").value="";
+}
+function cancelContModal(){
+  document.getElementById("contModal").style.display="none";
+}
+function confirmContModal(){
+  var selected=document.querySelector("#contButtons .empaque-btn.selected");
+  var free=document.getElementById("contFreeInput").value.trim();
+  var descripcion="";
+  if(selected){
+    descripcion=selected.getAttribute("data-codigo");
+  }else if(free){
+    descripcion=free;
+  }else{
+    showToast("Selecciona un tipo o escribe libre","warn");return;
+  }
   var sess=embSessions[activeEmbSession];
   if(!sess.contenedores)sess.contenedores=[];
-  var descList=EMPAQUES.contenedores.map(function(c){return c.descripcion;});
-  var descripcion;
-  if(descList.length>0){
-    var opts=descList.map(function(d,i){return(i+1)+". "+d;}).join("\n");
-    var choice=prompt("Selecciona tipo de contenedor (número) o escribe uno nuevo:\n\n"+opts);
-    if(choice===null)return;
-    var n=parseInt(choice);
-    if(!isNaN(n)&&n>=1&&n<=descList.length){
-      descripcion=descList[n-1];
-    }else{
-      descripcion=choice.trim();
-    }
-  }else{
-    descripcion=prompt("Descripción del contenedor:");
-    if(descripcion===null)return;
-    descripcion=descripcion.trim();
-  }
-  if(!descripcion){showToast("Descripción vacía","warn");return;}
   sess.contenedores.push({
     id:"cont_"+Date.now(),
     descripcion:descripcion,
@@ -927,6 +1003,7 @@ function addContenedor(){
   });
   sess.activeCont=sess.contenedores.length-1;
   saveEmbSession(activeEmbSession);
+  document.getElementById("contModal").style.display="none";
   renderContenedorTabs();
   renderContenedorActivo();
   renderEmbSummary();
@@ -943,8 +1020,15 @@ function deleteContenedor(idx){
   var sess=embSessions[activeEmbSession];
   var cont=sess.contenedores[idx];
   if(cont.bultos.length>0){
-    if(!confirm("El contenedor tiene "+cont.bultos.length+" bultos. ¿Eliminar?"))return;
+    askConfirm("¿Eliminar contenedor?","El contenedor tiene "+cont.bultos.length+" bultos. ¿Eliminar de todos modos?",function(){
+      doDeleteContenedor(idx);
+    });
+  }else{
+    doDeleteContenedor(idx);
   }
+}
+function doDeleteContenedor(idx){
+  var sess=embSessions[activeEmbSession];
   sess.contenedores.splice(idx,1);
   if(sess.activeCont>=sess.contenedores.length)sess.activeCont=sess.contenedores.length-1;
   saveEmbSession(activeEmbSession);
@@ -1138,7 +1222,7 @@ function processManualQR(){
 function parseQR(str){
   if(!str||str.indexOf("MKM|")!==0)return null;
   var parts=str.split("|");
-  var out={itemId:"",oc:"",ot:"",shipTo:"",qty:"",kg:"",fecha:""};
+  var out={itemId:"",oc:"",ot:"",shipTo:"",qty:"",kg:"",fecha:"",uid:""};
   if(parts.length>=2)out.itemId=parts[1];
   for(var i=2;i<parts.length;i++){
     var p=parts[i];
@@ -1146,8 +1230,9 @@ function parseQR(str){
     else if(p.indexOf("OT:")===0)out.ot=p.substr(3);
     else if(p.indexOf("Q:")===0)out.qty=p.substr(2);
     else if(p.indexOf("KG:")===0)out.kg=p.substr(3);
-    else if(i===4)out.shipTo=p;
-    else if(i===parts.length-1)out.fecha=p;
+    else if(p.indexOf("UID:")===0)out.uid=p.substr(4);
+    else if(/^\d{4}-\d{2}-\d{2}/.test(p))out.fecha=p;
+    else if(i===4&&!out.shipTo)out.shipTo=p;
   }
   return out;
 }
@@ -1177,6 +1262,17 @@ function processQR(str){
     showToast("✗ Etiqueta es para "+q.shipTo+", sesión es "+sess.shipTo,"error");
     return;
   }
+  // Candado: validar Item ID contra catálogo (solo si cliente no es libre)
+  if(!sess.freeClient&&sess.shipTo){
+    var catMatch=validateItemVsShipTo(q.itemId,sess.shipTo);
+    if(catMatch.status==="mismatch"){
+      showToast("✗ "+q.itemId+" pertenece a "+catMatch.shipTo+", sesión es "+sess.shipTo,"error");
+      return;
+    }
+    if(catMatch.status==="notfound"){
+      showToast("⚠ "+q.itemId+" no está en catálogo, se agrega como libre","warn");
+    }
+  }
   // Enriquecer con catálogo
   var desc="",pesoUnit="",empaqueSugerido="";
   for(var i=0;i<catalogo.length;i++){
@@ -1187,7 +1283,6 @@ function processQR(str){
       break;
     }
   }
-  // Abrir modal de asignar caja
   openCajaModal({
     itemId:q.itemId,descripcion:desc,
     oc:q.oc,ot:q.ot,shipTo:q.shipTo,
@@ -1195,6 +1290,22 @@ function processQR(str){
     fecha:q.fecha,scannedAt:new Date().toISOString(),
     qrRaw:str,empaqueSugerido:empaqueSugerido
   },false);
+}
+
+// Valida si el Item ID pertenece al ShipTo de la sesión según el catálogo
+// return { status: "match" | "mismatch" | "notfound", shipTo: "..." }
+function validateItemVsShipTo(itemId,sessionShipTo){
+  if(!itemId||!catalogo.length)return{status:"notfound"};
+  var matchShipTos=[];
+  for(var i=0;i<catalogo.length;i++){
+    if(catalogo[i].itemId===itemId){
+      var s=catalogo[i].shipTo||"";
+      if(s&&matchShipTos.indexOf(s)<0)matchShipTos.push(s);
+    }
+  }
+  if(matchShipTos.length===0)return{status:"notfound"};
+  if(matchShipTos.indexOf(sessionShipTo)>=0)return{status:"match"};
+  return{status:"mismatch",shipTo:matchShipTos.join("/")};
 }
 function toggleManualEntry(){
   var f=document.getElementById("manualEntryForm");
@@ -1236,6 +1347,18 @@ function addManualEntry(){
   var qty=document.getElementById("manQty").value.trim();
   var oc=document.getElementById("manOC").value.trim();
   if(!itemId||!qty){showToast("Item ID y cantidad son obligatorios","warn");return;}
+  // Candado: Item ID contra ShipTo de la sesión
+  if(!sess.freeClient&&sess.shipTo){
+    var catMatch=validateItemVsShipTo(itemId,sess.shipTo);
+    if(catMatch.status==="mismatch"){
+      showToast("✗ "+itemId+" pertenece a "+catMatch.shipTo+", sesión es "+sess.shipTo,"error");
+      return;
+    }
+    if(catMatch.status==="notfound"){
+      showToast("⚠ "+itemId+" no está en catálogo, se agrega como libre","warn");
+    }
+  }
+  if(!qty||!qty){showToast("Item ID y cantidad son obligatorios","warn");return;}
   var desc="",pesoUnit="",empaqueSugerido="";
   for(var i=0;i<catalogo.length;i++){
     if(catalogo[i].itemId===itemId){
@@ -1261,37 +1384,57 @@ var pendingIsManual=false;
 function openCajaModal(bulto,fromManual){
   pendingBulto=bulto;
   pendingIsManual=fromManual;
-  var sel=document.getElementById("cajaSelect");
-  sel.innerHTML='<option value="">-- Selecciona una caja --</option>';
   var sugerido=(bulto.empaqueSugerido||"").toString().trim();
+  var sugeridoLower=sugerido.toLowerCase();
+
+  var lista=(EMPAQUES.lista||[]);
+  var btns=document.getElementById("cajaButtons");
+  var h="";
   var sugeridoMatch=false;
-  for(var i=0;i<EMPAQUES.cajas.length;i++){
-    var opt=document.createElement("option");
-    opt.value=EMPAQUES.cajas[i].descripcion;
-    opt.textContent=EMPAQUES.cajas[i].descripcion;
-    // Preseleccionar si coincide con sugerido (match por prefijo del codigo o descripcion completa)
-    if(sugerido){
-      var d=EMPAQUES.cajas[i].descripcion;
-      if(d===sugerido||d.toLowerCase().indexOf(sugerido.toLowerCase())===0||d.split(" ")[0]===sugerido||d.split("—")[0].trim()===sugerido){
-        opt.selected=true;
-        sugeridoMatch=true;
+  if(lista.length===0){
+    h='<div style="grid-column:span 2;padding:12px;text-align:center;color:#888;font-size:12px">No hay empaques en catálogo.<br>Escribe libre abajo.</div>';
+  }else{
+    for(var i=0;i<lista.length;i++){
+      var e=lista[i];
+      var cls="empaque-btn";
+      if(sugerido){
+        var c=e.codigo||"";
+        var d=e.descripcion||"";
+        if(c.toLowerCase()===sugeridoLower||d.toLowerCase()===sugeridoLower||c.toLowerCase().indexOf(sugeridoLower)===0){
+          cls+=" suggested selected";
+          sugeridoMatch=true;
+        }
       }
+      h+='<div class="'+cls+'" data-codigo="'+esc(e.codigo)+'" onclick="selectCajaBtn(this)"><div class="code">'+esc(e.codigo)+'</div><div class="desc">'+esc(e.descripcion||"")+'</div></div>';
     }
-    sel.appendChild(opt);
   }
-  document.getElementById("cajaFreeInput").value="";
-  // Indicar visualmente la sugerencia
+  btns.innerHTML=h;
+
+  var freeVal="";
+  if(sugerido&&!sugeridoMatch){
+    freeVal=sugerido;
+  }
+  document.getElementById("cajaFreeInput").value=freeVal;
+
   var msg=bulto.itemId+" — "+bulto.qty+" pzs — "+(bulto.kg||"?")+" kg";
   if(sugerido){
     if(sugeridoMatch){
       msg+='<div style="margin-top:6px;padding:6px 10px;background:#e8f5e9;border-radius:6px;font-size:12px;color:#1a6b3c"><b>✓ Empaque sugerido:</b> '+esc(sugerido)+' (pre-seleccionado)</div>';
     }else{
-      msg+='<div style="margin-top:6px;padding:6px 10px;background:#fff3e0;border-radius:6px;font-size:12px;color:#e65100"><b>⚠ Empaque sugerido:</b> '+esc(sugerido)+' (no está en catálogo, escríbelo libre si aplica)</div>';
-      document.getElementById("cajaFreeInput").value=sugerido;
+      msg+='<div style="margin-top:6px;padding:6px 10px;background:#fff3e0;border-radius:6px;font-size:12px;color:#e65100"><b>⚠ Empaque sugerido:</b> '+esc(sugerido)+' (no está en catálogo)</div>';
     }
   }
   document.getElementById("cajaModalBulto").innerHTML=msg;
   document.getElementById("cajaModal").style.display="flex";
+}
+function selectCajaBtn(el){
+  var siblings=document.querySelectorAll("#cajaButtons .empaque-btn");
+  for(var i=0;i<siblings.length;i++){
+    siblings[i].classList.remove("selected");
+    siblings[i].classList.remove("suggested");
+  }
+  el.classList.add("selected");
+  document.getElementById("cajaFreeInput").value="";
 }
 function cancelCajaModal(){
   pendingBulto=null;
@@ -1299,15 +1442,20 @@ function cancelCajaModal(){
 }
 function confirmCajaModal(){
   if(!pendingBulto)return;
-  var sel=document.getElementById("cajaSelect").value;
+  var selected=document.querySelector("#cajaButtons .empaque-btn.selected");
   var free=document.getElementById("cajaFreeInput").value.trim();
-  var cajaDesc=free||sel;
-  if(!cajaDesc){showToast("Selecciona o escribe una caja","warn");return;}
+  var cajaDesc="";
+  if(selected){
+    cajaDesc=selected.getAttribute("data-codigo");
+  }else if(free){
+    cajaDesc=free;
+  }else{
+    showToast("Selecciona o escribe una caja","warn");return;
+  }
   pendingBulto.cajaDescripcion=cajaDesc;
   var sess=embSessions[activeEmbSession];
   sess.contenedores[sess.activeCont].bultos.push(pendingBulto);
   saveEmbSession(activeEmbSession);
-  // Limpiar form manual si aplica
   if(pendingIsManual){
     document.getElementById("manItemId").value="";
     document.getElementById("manOT").value="";
@@ -1324,6 +1472,25 @@ function confirmCajaModal(){
 }
 
 // ====== CSV Y CIERRE ======
+// ====== MODAL GENERICO DE CONFIRMACION ======
+var pendingConfirmFn=null;
+function askConfirm(title,msg,onOk){
+  document.getElementById("confirmModalTitle").textContent=title||"¿Confirmas?";
+  document.getElementById("confirmModalMsg").textContent=msg||"";
+  pendingConfirmFn=onOk;
+  document.getElementById("confirmModal").style.display="flex";
+}
+function cancelConfirmModal(){
+  pendingConfirmFn=null;
+  document.getElementById("confirmModal").style.display="none";
+}
+function okConfirmModal(){
+  var fn=pendingConfirmFn;
+  pendingConfirmFn=null;
+  document.getElementById("confirmModal").style.display="none";
+  if(fn)fn();
+}
+
 // ====== TOAST ======
 function showToast(msg,type){
   var t=document.getElementById("mkmToast");
@@ -1494,11 +1661,12 @@ function saveNumeroASN(){
 }
 
 function confirmCerrarSesion(){
-  if(!confirm("¿Cerrar sesión? Todos los datos locales se borrarán."))return;
-  embSessions[activeEmbSession]=null;
-  saveEmbSession(activeEmbSession);
-  showToast("✓ Sesión cerrada");
-  setTimeout(function(){backToSessions();},800);
+  askConfirm("¿Cerrar sesión?","Todos los datos locales se borrarán. Los archivos en Drive ya están guardados.",function(){
+    embSessions[activeEmbSession]=null;
+    saveEmbSession(activeEmbSession);
+    showToast("✓ Sesión cerrada");
+    setTimeout(function(){backToSessions();},800);
+  });
 }
 
 function postToAppsScript(payload,onSuccess){
@@ -1530,7 +1698,7 @@ function imprimirEtiquetasContenedor(){
   generarEtiquetasEmbarque(sess,null);
 }
 
-// ====== ETIQUETA DE EMBARQUE 4x5" Uline S-17381 (4 por hoja carta) ======
+// ====== ETIQUETA DE EMBARQUE 5x4" (horizontal) Uline S-17381 (4 por hoja carta) ======
 function makeEtiquetaEmbarque(sess,cont,idx,total){
   // Calcular peso total y resumen del contenedor
   var totalPzs=0,totalKg=0;
@@ -1551,41 +1719,41 @@ function makeEtiquetaEmbarque(sess,cont,idx,total){
     +"|PZS:"+totalPzs+"|KG:"+totalKg.toFixed(2);
   if(reqASN&&sess.numeroASN)qrPayload+="|ASN:"+sess.numeroASN;
   qrPayload+="|"+fecha;
-  var qrUrl="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data="+encodeURIComponent(qrPayload)+"&margin=1";
+  var qrUrl="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data="+encodeURIComponent(qrPayload)+"&margin=1";
 
-  // Lista breve de items (hasta 4 para que quepa)
-  var itemList=itemIds.slice(0,4).map(function(id){return id+" ("+items[id]+")";}).join(", ");
-  if(itemIds.length>4)itemList+=" +"+(itemIds.length-4)+" más";
+  // Lista breve de items (hasta 5 para que quepa)
+  var itemList=itemIds.slice(0,5).map(function(id){return id+" ("+items[id]+")";}).join(", ");
+  if(itemIds.length>5)itemList+=" +"+(itemIds.length-5)+" más";
 
   var h='<div class="emb-lbl">';
-  // Logo
+  // Banda superior con logo
   h+='<div class="emb-lbl-logo"><img src="'+LOGO_URL+'" alt="MKM"></div>';
-  // Cuerpo
+  // Cuerpo principal (3 columnas)
   h+='<div class="emb-lbl-body">';
-  // Izquierda (datos)
-  h+='<div class="emb-lbl-left">';
+  // Columna 1: Cliente + dirección + datos
+  h+='<div class="emb-lbl-col1">';
   h+='<div class="emb-lbl-cliente">'+esc(st.real)+'</div>';
   if(st.dirEntrega)h+='<div class="emb-lbl-dir">'+esc(st.dirEntrega)+'</div>';
   h+='<div class="emb-lbl-grid">';
   if(sess.remision)h+='<div class="emb-lbl-field"><div class="emb-lbl-lbl">REMISIÓN</div><div class="emb-lbl-val">'+esc(sess.remision)+'</div></div>';
   if(reqASN&&sess.numeroASN)h+='<div class="emb-lbl-field"><div class="emb-lbl-lbl"># ASN</div><div class="emb-lbl-val">'+esc(sess.numeroASN)+'</div></div>';
-  if(st.noProv)h+='<div class="emb-lbl-field"><div class="emb-lbl-lbl">NO. PROVEEDOR</div><div class="emb-lbl-val">'+esc(st.noProv)+'</div></div>';
+  if(st.noProv)h+='<div class="emb-lbl-field"><div class="emb-lbl-lbl">NO. PROV</div><div class="emb-lbl-val">'+esc(st.noProv)+'</div></div>';
   h+='<div class="emb-lbl-field"><div class="emb-lbl-lbl">FECHA</div><div class="emb-lbl-val">'+esc(fecha)+'</div></div>';
   h+='</div>';
   h+='<div class="emb-lbl-items"><b>Contiene:</b> '+esc(itemList)+'</div>';
   h+='</div>';
-  // Derecha (tarima + peso + QR)
-  h+='<div class="emb-lbl-right">';
-  h+='<div class="emb-lbl-tarima"><div class="emb-lbl-tarima-big">'+(idx+1)+'<span style="font-size:14px"> de </span>'+total+'</div><div class="emb-lbl-tarima-sub">'+esc(cont.descripcion)+'</div></div>';
+  // Columna 2: Tarima + peso
+  h+='<div class="emb-lbl-col2">';
+  h+='<div class="emb-lbl-tarima"><div class="emb-lbl-tarima-big">'+(idx+1)+'<span style="font-size:16px"> de </span>'+total+'</div><div class="emb-lbl-tarima-sub">'+esc(cont.descripcion)+'</div></div>';
   h+='<div class="emb-lbl-peso"><div class="emb-lbl-lbl">PESO TOTAL</div><div class="emb-lbl-peso-big">'+totalKg.toFixed(1)+' kg</div><div class="emb-lbl-lbl" style="margin-top:2px">'+totalPzs+' pzs</div></div>';
-  h+='<div class="emb-lbl-qr"><img src="'+qrUrl+'" alt="QR"></div>';
   h+='</div>';
+  // Columna 3: QR
+  h+='<div class="emb-lbl-col3"><div class="emb-lbl-qr"><img src="'+qrUrl+'" alt="QR"></div></div>';
   h+='</div></div>';
   return h;
 }
 
 function generarEtiquetasEmbarque(sess,soloIdx){
-  // soloIdx: si es null, imprime todas. Si es un índice, imprime solo esa.
   if(!sess.contenedores||sess.contenedores.length===0){
     showToast("No hay contenedores","warn");return;
   }
@@ -1599,38 +1767,43 @@ function generarEtiquetasEmbarque(sess,soloIdx){
     }
   }
   var pw=window.open("","_blank");
+  // Layout 5x4 horizontal: 2 etiquetas por fila, 2 filas = 4 por hoja carta
   var style=
     '*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,sans-serif}'
-    +'.print-grid{display:grid;grid-template-columns:4in 4in;grid-auto-rows:5in;justify-content:center;align-content:start;column-gap:0.5in;row-gap:0.5in;width:8.5in;margin:0 auto;padding:0.5in 0 0 0}'
-    +'.emb-lbl{width:4in;height:5in;border:1.5px solid #000;display:flex;flex-direction:column;background:#fff;color:#000;overflow:hidden;page-break-inside:avoid}'
-    +'.emb-lbl-logo{border-bottom:1.5px solid #000;padding:6px;display:flex;align-items:center;justify-content:center;background:#fff;height:0.55in}'
-    +'.emb-lbl-logo img{height:40px;max-width:100%}'
+    +'.print-grid{display:grid;grid-template-columns:5in 5in;grid-auto-rows:4in;justify-content:center;align-content:start;column-gap:0.25in;row-gap:0.25in;width:10.5in;margin:0 auto;padding:0.25in 0 0 0}'
+    +'@page{margin:0;size:letter landscape}'
+    +'.emb-lbl{width:5in;height:4in;border:1.5px solid #000;display:flex;flex-direction:column;background:#fff;color:#000;overflow:hidden;page-break-inside:avoid}'
+    +'.emb-lbl-logo{border-bottom:1.5px solid #000;padding:4px;display:flex;align-items:center;justify-content:center;background:#fff;height:0.6in;flex-shrink:0}'
+    +'.emb-lbl-logo img{height:44px;max-width:100%}'
     +'.emb-lbl-body{display:flex;flex:1;overflow:hidden}'
-    +'.emb-lbl-left{flex:1.35;padding:6px 8px;border-right:1px solid #000;display:flex;flex-direction:column;overflow:hidden}'
-    +'.emb-lbl-right{flex:1;padding:6px 8px;display:flex;flex-direction:column;align-items:center;justify-content:space-between}'
-    +'.emb-lbl-cliente{font-weight:800;font-size:11px;line-height:1.15;margin-bottom:3px}'
-    +'.emb-lbl-dir{font-size:8px;color:#333;line-height:1.2;margin-bottom:6px;border-bottom:1px dashed #aaa;padding-bottom:4px}'
+    +'.emb-lbl-col1{flex:1.6;padding:6px 8px;border-right:1px solid #000;display:flex;flex-direction:column;overflow:hidden}'
+    +'.emb-lbl-col2{flex:1;padding:6px 8px;border-right:1px solid #000;display:flex;flex-direction:column;align-items:center;justify-content:space-between}'
+    +'.emb-lbl-col3{flex:0.9;padding:6px 4px;display:flex;align-items:center;justify-content:center}'
+    +'.emb-lbl-cliente{font-weight:800;font-size:12px;line-height:1.15;margin-bottom:3px}'
+    +'.emb-lbl-dir{font-size:8.5px;color:#333;line-height:1.2;margin-bottom:6px;border-bottom:1px dashed #aaa;padding-bottom:4px}'
     +'.emb-lbl-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 8px;margin-bottom:6px}'
     +'.emb-lbl-field{line-height:1.15}'
-    +'.emb-lbl-lbl{font-size:6.5px;color:#555;text-transform:uppercase;letter-spacing:0.3px;font-weight:600}'
-    +'.emb-lbl-val{font-size:10px;font-weight:900}'
-    +'.emb-lbl-items{font-size:7.5px;color:#333;line-height:1.25;margin-top:auto;padding-top:4px;border-top:1px dashed #aaa}'
-    +'.emb-lbl-tarima{text-align:center;margin-bottom:4px}'
-    +'.emb-lbl-tarima-big{font-size:36px;font-weight:900;line-height:1;color:#000}'
-    +'.emb-lbl-tarima-sub{font-size:8.5px;font-weight:700;margin-top:2px;color:#333;line-height:1.15}'
-    +'.emb-lbl-peso{text-align:center;padding:4px;border:1px solid #000;border-radius:4px;background:#f5f5f5;margin:6px 0;width:100%}'
-    +'.emb-lbl-peso-big{font-size:18px;font-weight:900;line-height:1.1}'
+    +'.emb-lbl-lbl{font-size:7px;color:#555;text-transform:uppercase;letter-spacing:0.3px;font-weight:600}'
+    +'.emb-lbl-val{font-size:11px;font-weight:900}'
+    +'.emb-lbl-items{font-size:8px;color:#333;line-height:1.25;margin-top:auto;padding-top:4px;border-top:1px dashed #aaa}'
+    +'.emb-lbl-tarima{text-align:center;margin-top:4px}'
+    +'.emb-lbl-tarima-big{font-size:44px;font-weight:900;line-height:1;color:#000}'
+    +'.emb-lbl-tarima-sub{font-size:9.5px;font-weight:700;margin-top:2px;color:#333;line-height:1.15}'
+    +'.emb-lbl-peso{text-align:center;padding:6px 4px;border:1px solid #000;border-radius:4px;background:#f5f5f5;width:100%;margin-bottom:4px}'
+    +'.emb-lbl-peso-big{font-size:22px;font-weight:900;line-height:1.1}'
     +'.emb-lbl-qr{display:flex;align-items:center;justify-content:center}'
-    +'.emb-lbl-qr img{width:1.4in;height:1.4in}'
-    +'@page{margin:0;size:letter}'
+    +'.emb-lbl-qr img{width:1.6in;height:1.6in}'
     +'@media print{body{margin:0}}';
   pw.document.write('<!DOCTYPE html><html><head><title>Etiquetas de Embarque MKM</title><style>'+style+'</style></head><body><div class="print-grid">'+all.join("")+'</div><script>window.onload=function(){setTimeout(function(){window.print();},500);}<\/script></body></html>');
   pw.document.close();
-  // Marcar como impresas (solo cuando se imprimen todas)
+
   if(soloIdx===null||soloIdx===undefined){
+    // Primera impresión (no reimprimir)
     setTimeout(function(){
       sess.etiquetasImpresas=true;
       saveEmbSession(activeEmbSession);
+      // Subir reporte al Drive (paso 4)
+      uploadReporteUso(sess);
       renderEmbSummary();
       showToast("✓ Etiquetas enviadas a impresión");
     },800);
@@ -1645,6 +1818,61 @@ function reimprimirContenedor(idx){
   if(!sess.remision){showToast("Falta la remisión","warn");return;}
   if(clientRequiresASN(sess)&&!sess.numeroASN){showToast("Falta el # ASN","warn");return;}
   generarEtiquetasEmbarque(sess,idx);
+}
+
+// ====== REPORTE DE USO DE CONTENEDORES ======
+function buildEmpaquesUsados(sess){
+  // Consolida contadores por código de empaque
+  // Cada contenedor = 1 unidad del código del contenedor
+  // Cada bulto escaneado = 1 unidad del código de la caja asignada
+  var conteo={};
+  function addOne(codigo){
+    if(!codigo)return;
+    var key=codigo.toString().trim();
+    if(!key)return;
+    if(!conteo[key])conteo[key]={codigo:key,descripcion:"",cantidad:0};
+    conteo[key].cantidad++;
+  }
+  // Mapear descripcion desde el catálogo
+  function findDesc(codigo){
+    var lista=(EMPAQUES.lista||[]);
+    for(var i=0;i<lista.length;i++){
+      if((lista[i].codigo||"").toLowerCase()===(codigo||"").toLowerCase())return lista[i].descripcion||"";
+    }
+    return "";
+  }
+  for(var c=0;c<(sess.contenedores||[]).length;c++){
+    var cont=sess.contenedores[c];
+    addOne(cont.descripcion);
+    for(var b=0;b<cont.bultos.length;b++){
+      addOne(cont.bultos[b].cajaDescripcion||"");
+    }
+  }
+  // Enriquecer con descripción del catálogo
+  var out=[];
+  Object.keys(conteo).forEach(function(k){
+    var it=conteo[k];
+    it.descripcion=findDesc(it.codigo);
+    out.push(it);
+  });
+  return out;
+}
+
+function uploadReporteUso(sess){
+  var empaques=buildEmpaquesUsados(sess);
+  if(!empaques.length)return;
+  var payload={
+    type:"reporte",
+    client:sess.clientLabel||sess.shipTo||"Cliente",
+    shipTo:sess.shipTo||"",
+    remision:sess.remision||"",
+    empaques:empaques
+  };
+  postToAppsScript(payload,function(resp){
+    if(resp.results&&resp.results.reporte){
+      console.log("Reporte actualizado:",resp.results.reporte.added,"filas agregadas");
+    }
+  });
 }
 
 // ====== INIT ======
